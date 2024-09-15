@@ -54,22 +54,23 @@ export function ConfirmDeleteView(props: {
 }
 
 export function AlertView(props: {
+    data?: EventAlert,
     type: EventMainType,
     fileRefs: {name: string, id: string}[],
     title: string;
     close: () => void;
     confirm: (date: EventAlert) => void;
 }) {
-    const [id, setId] = useState(generateGUID());
-    const [name, setName] = useState("");
-    const [text, setText] = useState("");
+    const [id, setId] = useState(props.data?.id || generateGUID());
+    const [name, setName] = useState(props.data?.name || "");
+    const [text, setText] = useState(props.data?.audio?.tts?.text || "");
     const [type, setType] = useState<EventMainType>(props.type);
-    const [specType, setSpecType] = useState<'min' | 'exact'>('min');
-    const [specAmount, setSpecAmount] = useState<number>(0);
+    const [specType, setSpecType] = useState<'min' | 'exact'>(props.data?.specifier.type || 'min');
+    const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
 
-    const [jingle, setJingle] = useState<{name: string, id: string}>({name: 'id', id: ''});
-    const [voiceType, setVoiceType] = useState<'ai' | 'google' | 'none'>('none');
-    const [voice, setVoice] = useState<string>("");
+    const [jingle, setJingle] = useState<{name: string, id: string}>({name: props.fileRefs.find(x => (x.id === props.data?.audio?.jingle) && x.id)?.name || 'id', id: (props.data?.audio?.jingle || "")});
+    const [voiceType, setVoiceType] = useState<'ai' | 'google' | 'none'>(props.data?.audio?.tts?.voiceType || 'none');
+    const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
 
     const InfoText = "You can use {{username}}, {{usernameTo}}, {{amount}}, {{amount2}} & {{text}} variables inside the text.";
 
@@ -156,7 +157,15 @@ export function Navigation(props: NavigationProps) {
 
     const addAlert = function(data: EventAlert) {
         const config = appContext.alertConfig;
-        config.data!.alerts[EventTypeMapping[data.type]].push(data);
+        const array = config.data!.alerts[EventTypeMapping[data.type]];
+         const index = array.findIndex(obj => obj.id === data.id);
+
+        if (index !== -1) {
+            array[index] = data;
+        } else {
+            array.push(data);
+        }
+       
         appContext.setAlertConfig(config);
         confirmDeleteHandler.close();
         setConfirmDeleteComponent(undefined);
@@ -185,8 +194,8 @@ export function Navigation(props: NavigationProps) {
         confirmDeleteHandler.open();
     }
 
-    function addAlertView(type: EventMainType, title: string, confirm: (data: EventAlert) => void) {
-        setConfirmDeleteComponent(<AlertView fileRefs={Object.values(appContext.alertConfig.data?.files || {}).map(x => ({name: x.name, id: x.id}))} type={type} title={title} close={confirmDeleteHandler.close} confirm={confirm}/>);
+    function addAlertView(type: EventMainType, title: string, confirm: (data: EventAlert) => void, data?: EventAlert) {
+        setConfirmDeleteComponent(<AlertView fileRefs={Object.values(appContext.alertConfig.data?.files || {}).map(x => ({name: x.name, id: x.id}))} type={type} title={title} data={data} close={confirmDeleteHandler.close} confirm={confirm}/>);
         confirmDeleteHandler.open();
     }
 
@@ -197,7 +206,7 @@ export function Navigation(props: NavigationProps) {
     
     const alertNodes = <>{Object.keys(appContext.alertConfig.data?.alerts || {}).map((ev) => {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
-            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={icons[ev as EventMainType]} rightSection={<ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash/></ActionIcon>} key={alert.id} label={alert.name}/>)}
+            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={icons[ev as EventMainType]} onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)} rightSection={<ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash/></ActionIcon>} key={alert.id} label={alert.name}/>)}
             <NavLink leftSection={<IconPlus />} label="Add New" key={ev + "-new"} onClick={() => addAlertView(ev as EventMainType, 'Add Alert: ' + alertTypes[ev], addAlert)}></NavLink>
         </NavLink>
     })}</>;

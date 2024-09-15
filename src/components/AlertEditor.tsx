@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AppShell, Image, Group, Text, Button } from '@mantine/core';
 import logo from '@/favicon.svg'
 import { Navigation } from './NavBar';
@@ -7,7 +7,9 @@ import { IconUpload } from '@tabler/icons-react'
 
 const AlertEditor = () => {
   const appContext = useContext(AppContext);
+  const [save, setSave] = useState(false);
 
+  const bProps = save? {loading: true, loaderProps:{ type: 'dots' }} : {};
   return (
     <AppShell
       header={{ height: 52 }}
@@ -18,8 +20,11 @@ const AlertEditor = () => {
             <Image src={logo} h={32}/>
             <Text fw={700} size="18px">HEHE CHAT - Editor</Text>
           <Button variant="gradient"
-          onClick={appContext.uploadAlertConfig}
-      gradient={{ from: 'blue', to: 'cyan', deg: 90 }} rightSection={<IconUpload/>}>Save</Button>
+          {...bProps}
+          onClick={() => {setSave(true);appContext.uploadAlertConfig().then(() => {
+            setSave(false);
+          })}}
+      gradient={{ from: 'blue', to: 'cyan', deg: 90 }} rightSection={save ? null : <IconUpload/>}>Save</Button>
         </Group>
       </AppShell.Header>
 
