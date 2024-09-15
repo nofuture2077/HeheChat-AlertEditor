@@ -118,7 +118,7 @@ export function UploadFileView(props: {
         setName(file.name);
         setMime(file.type);
         readFile(file).then((data: string) => {
-            setData(data);
+            setData(data.split(',')[1]);
         })
     }
     return (

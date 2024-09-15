@@ -44,7 +44,7 @@ function App() {
         return fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
             body: JSON.stringify({channel, token, data: appContext.alertConfig}),
             method: 'POST'
-        });
+        }).then(res => undefined);
     }
 
     return <MantineProvider defaultColorScheme="auto" theme={theme}>
