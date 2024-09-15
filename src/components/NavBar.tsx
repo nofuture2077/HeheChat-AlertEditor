@@ -1,6 +1,6 @@
 import { useContext, ReactElement, useState } from 'react';
 import { AppContext } from '@/ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput} from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea} from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventType, EventTypeMapping } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile } from '@tabler/icons-react';
@@ -92,7 +92,7 @@ export function AlertView(props: {
                 <Select label="TTS System" data={['ai', 'google', 'none']} value={voiceType} onChange={(value) => setVoiceType(value as 'ai' | 'google' | 'none' || specType)} />
                 <TextInput label="Voice" value={voice} onChange={(v) => setVoice(v.target.value)}></TextInput>
 
-                <TextInput label="TTS Text" value={text} onChange={(ev) => setText(ev.target.value)}></TextInput>
+                <Textarea label="TTS Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
                 <Text fs="italic">{InfoText}</Text>
 
                 <Group justify="space-around" mt="md">
