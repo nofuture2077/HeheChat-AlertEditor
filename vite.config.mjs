@@ -5,7 +5,7 @@ import mkcert from 'vite-plugin-mkcert'
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), mkcert()],
-  base: '/HeheChatEditor/',
+  base: '/HeheChat-AlertEditor/',
   test: {
     globals: true,
     environment: 'jsdom',
