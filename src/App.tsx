@@ -41,7 +41,7 @@ function App() {
     };
 
     const uploadAlertConfig = async function () {
-        fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
+        return fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
             body: JSON.stringify({channel, token, data: appContext.alertConfig}),
             method: 'POST'
         });
