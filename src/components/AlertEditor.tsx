@@ -18,6 +18,7 @@ const AlertEditor = () => {
             <Image src={logo} h={32}/>
             <Text fw={700} size="18px">HEHE CHAT - Editor</Text>
           <Button variant="gradient"
+          onClick={appContext.uploadAlertConfig}
       gradient={{ from: 'blue', to: 'cyan', deg: 90 }} rightSection={<IconUpload/>}>Save</Button>
         </Group>
       </AppShell.Header>

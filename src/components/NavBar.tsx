@@ -96,7 +96,7 @@ export function AlertView(props: {
 
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
-                    <Button variant="filled" color="pink" onClick={() => props.confirm({id, name, type, specifier: {type: specType, amount: specAmount}, restriction: 'none', audio: {jingle: jingle?.id || undefined, tts: { text, voiceType, voiceSpecifier: voice, voiceParams: {}}}})}>Create Alert</Button>
+                    <Button variant="filled" color="pink" onClick={() => props.confirm({id, name, type, specifier: {type: specType, amount: specAmount}, restriction: 'none', audio: {jingle: jingle?.id || undefined, tts: (text && voiceType !== 'none') ? { text, voiceType, voiceSpecifier: voice, voiceParams: {}} : undefined}})}>Create Alert</Button>
                 </Group>
             </Fieldset>
         </Modal>);
