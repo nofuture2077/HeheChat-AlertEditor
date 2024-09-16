@@ -20,16 +20,14 @@ function App() {
     });
 
     const urlParams = new URLSearchParams(window.location.search);
-    const channel = urlParams.get('channel');
     const token = urlParams.get('token');
 
-    if (!channel || !token) {
+    if (!token) {
         return <MantineProvider defaultColorScheme="auto" theme={theme}><HomePage/></MantineProvider>
     }
 
     useEffect(() => {
-        fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/get?channel=' + channel + '&token=' + token).then(res => res.json()).then(data => {
-            data.meta.channel = channel;
+        fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/get?token=' + token).then(res => res.json()).then(data => {
             setAppContext({...appContext, alertConfig: data});
         });
     }, []);
@@ -42,7 +40,7 @@ function App() {
 
     const uploadAlertConfig = async function () {
         return fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
-            body: JSON.stringify({channel, token, data: appContext.alertConfig}),
+            body: JSON.stringify({token, data: appContext.alertConfig}),
             method: 'POST'
         }).then(res => undefined);
     }
