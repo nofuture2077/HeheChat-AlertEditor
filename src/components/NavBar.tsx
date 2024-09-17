@@ -61,6 +61,7 @@ export function AlertView(props: {
     close: () => void;
     confirm: (date: EventAlert) => void;
 }) {
+    const config = useContext(AppContext);
     const [id, setId] = useState(props.data?.id || generateGUID());
     const [name, setName] = useState(props.data?.name || "");
     const [text, setText] = useState(props.data?.audio?.tts?.text || "");
@@ -73,7 +74,7 @@ export function AlertView(props: {
     const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
 
     const InfoText = "You can use {{username}}, {{usernameTo}}, {{amount}}, {{amount2}} & {{text}} variables inside the text.";
-
+    const voiceTypes = config.aiVoices.length ? ['ai', 'google', 'none'] : ['google', 'none'];
     return (
         <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false}>
             <Fieldset legend={props.title}>
@@ -85,15 +86,20 @@ export function AlertView(props: {
 
                 <Space h="lg"/>
 
-                <Select label="Jingle" data={['-'].concat(props.fileRefs.map(x => x.name || ''))} value={jingle?.name} onChange={(value) => setJingle(props.fileRefs.find(x => x.name === value) || {name: '-', id: ''})} />
+                <Select label="Jingle" data={['none'].concat(props.fileRefs.map(x => x.name || ''))} value={jingle?.name} onChange={(value) => setJingle(props.fileRefs.find(x => x.name === value) || {name: 'none', id: ''})} />
 
                 <Space h="lg"/>
 
-                <Select label="TTS System" data={['ai', 'google', 'none']} value={voiceType} onChange={(value) => setVoiceType(value as 'ai' | 'google' | 'none' || specType)} />
-                <TextInput label="Voice" value={voice} onChange={(v) => setVoice(v.target.value)}></TextInput>
+                <Select label="TTS System" data={voiceTypes} value={voiceType} onChange={(value) => setVoiceType(value as 'ai' | 'google' | 'none' || specType)} />
+                
+                {voiceType === 'ai' ? <Select label="AI Voice" data={config.aiVoices.map(v => v.name)} value={voice} onChange={(value) => setVoice(value || '')} /> : voiceType === 'google' ? <TextInput label="Voice" value={voice} onChange={(v) => setVoice(v.target.value)}></TextInput> : null}
 
-                <Textarea label="TTS Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
-                <Text fs="italic">{InfoText}</Text>
+                { voiceType === 'none' ? null : (
+                    <>
+                        <Textarea label="TTS Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
+                        <Text fs="italic">{InfoText}</Text>
+                    </>
+                )}
 
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>

@@ -123,3 +123,10 @@ export const NEW_ALERTCONFIG: EventAlertConfig = {
         files: {}
     }
 }
+
+export interface AITTSVoice {
+  voice_id: string;
+  name: string;
+  category: string;
+  preview_url: string;
+}
