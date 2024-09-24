@@ -71,11 +71,11 @@ export type EventAlertTTS = {
 }
 
 export type EventAlertVisualData = {
-    element: Base64FileReference;
+    element?: Base64FileReference;
+    headline: string;
     text?: string;
     position?: string;
     layout?: string;
-    color?: string;
 }
 
 export type Base64FileReference = string;
