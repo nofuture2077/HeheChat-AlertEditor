@@ -234,7 +234,7 @@ export function Navigation(props: NavigationProps) {
 
     const alertNodes = <>{Object.keys(appContext.alertConfig.data?.alerts || {}).map((ev) => {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
-            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={icons[ev as EventMainType]} onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)} rightSection={<ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon>} key={alert.id} label={alert.name} />)}
+            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={<ActionIcon variant='transparent' onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)}>{icons[ev as EventMainType]}</ActionIcon>} rightSection={<ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon>} key={alert.id} label={alert.name} />)}
             <NavLink leftSection={<IconPlus />} label="Add New" key={ev + "-new"} onClick={() => addAlertView(ev as EventMainType, 'Add Alert: ' + alertTypes[ev], addAlert)}></NavLink>
         </NavLink>
     })}</>;
