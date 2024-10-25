@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { AppShell, Image, Group, Text, Button } from '@mantine/core';
-import logo from '@/logo.png'
+import logo from '@/logo.svg'
 import { Navigation } from './NavBar';
 import { AppContext } from '@/ApplicationContext';
 import { IconUpload } from '@tabler/icons-react'
