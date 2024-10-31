@@ -35,7 +35,8 @@ const alertTypes: Record<string, string> = {
     "raid": "Raids",
     "follow": "Follows",
     "donation": "Donations",
-    "cheer": "Bit-Donations"
+    "cheer": "Bit-Donations",
+    "channelPointRedemption": "Channel Points"
 };
 
 export function ConfirmDeleteView(props: {
