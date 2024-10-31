@@ -3,9 +3,9 @@ import { generateGUID } from './helper';
 export type EventType = 'raid' | 'follow' | 'cheer'| 'donation' |
 'sub_1000' | 'sub_2000' | 'sub_3000' | 'sub_Prime' | 
 'subgift_1000' | 'subgift_2000' | 'subgift_3000' | 
-'subgiftb_1000' | 'subgiftb_2000' | 'subgiftb_3000';
+'subgiftb_1000' | 'subgiftb_2000' | 'subgiftb_3000' | 'channelPointRedemption';
 
-export type EventMainType = 'sub' | 'subgift' | 'subgiftb' | 'raid' | 'follow' | 'donation' | 'cheer';
+export type EventMainType = 'sub' | 'subgift' | 'subgiftb' | 'raid' | 'follow' | 'donation' | 'cheer' | 'channelPointRedemption';
 
 export type EventAlertRestriction = 'none' | 'mod' | 'system';
 
@@ -26,13 +26,15 @@ export const EventTypeMapping: Record<EventType | EventMainType, EventMainType> 
   'subgiftb_3000': 'subgiftb',
   'sub': 'sub',
   'subgift': 'subgift',
-  'subgiftb': 'subgiftb'
+  'subgiftb': 'subgiftb',
+  'channelPointRedemption': 'channelPointRedemption'
 };
 
 
 export type EventAlertSpecifier = {
-    type: 'min' | 'exact',
-    amount: number,
+    type: 'min' | 'exact' | 'matches',
+    amount?: number,
+    text?: string
 }
 
 export type EventAlertMeta = {
@@ -121,7 +123,8 @@ export const NEW_ALERTCONFIG: EventAlertConfig = {
             "cheer": [],
             "donation": [],
             "raid": [],
-            "follow": []
+            "follow": [],
+            "channelPointRedemption": []
         },
         files: {}
     }

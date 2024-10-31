@@ -3,7 +3,7 @@ import { AppContext } from '@/ApplicationContext';
 import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventType, EventTypeMapping } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile } from './helper';
 
@@ -17,7 +17,8 @@ const icons: Record<EventMainType, ReactElement> = {
     'subgiftb': <IconGiftFilled />,
     'follow': <IconUserHeart />,
     'cheer': <IconCoinBitcoinFilled />,
-    'donation': <IconMoneybag />
+    'donation': <IconMoneybag />,
+    'channelPointRedemption':  <IconPlant/>
 }
 
 const fileTypeIcon: Record<string, ReactElement> = {
@@ -70,13 +71,16 @@ export function AlertView(props: {
     const [layout, setLayout] = useState(props.data?.visual?.layout || "");
     const [position, setPosition] = useState(props.data?.visual?.position || "");
     const [type, setType] = useState<EventMainType>(props.type);
-    const [specType, setSpecType] = useState<'min' | 'exact'>(props.data?.specifier.type || 'min');
+    const [specType, setSpecType] = useState<'min' | 'exact' | 'matches'>(props.data?.specifier.type || 'min');
     const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
+    const [specText, setSpecText] = useState<string>(props.data?.specifier.text || '');
 
     const [jingle, setJingle] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.audio?.jingle) && x.id)?.name || 'id', id: (props.data?.audio?.jingle || "") });
     const [image, setImage] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.visual?.element) && x.id)?.name || 'id', id: (props.data?.visual?.element || "") });
     const [voiceType, setVoiceType] = useState<'ai' | 'google' | 'none'>(props.data?.audio?.tts?.voiceType || 'none');
     const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
+
+    const nummberSpecType = specType === 'min' || specType === 'exact';
 
     const InfoText = "You can use {{username}}, {{usernameTo}}, {{amount}}, {{amount2}} & {{text}} variables inside the text.";
     const voiceTypes = config.aiVoices.length ? ['ai', 'google', 'none'] : ['google', 'none'];
@@ -92,8 +96,9 @@ export function AlertView(props: {
 
                     <Fieldset legend="Trigger">
                         <Stack>
-                            <Select label="Type" data={['min', 'exact']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' || specType)} />
-                            <NumberInput label="Amount" value={specAmount} onChange={(val) => setSpecAmount(Number(val))} />
+                            <Select label="Type" data={['min', 'exact', 'matches']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' | 'matches' || specType)} />
+                            {nummberSpecType ? <NumberInput label="Amount" value={specAmount} onChange={(val) => setSpecAmount(Number(val))} /> : 
+                            <TextInput label="Text" value={specText} onChange={(ev) => setSpecText(ev.target.value)} />}
                         </Stack>
                     </Fieldset>
 
@@ -123,7 +128,7 @@ export function AlertView(props: {
                 </SimpleGrid>
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
-                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: specAmount }, restriction: 'none', visual: headline ? {headline, text, position, layout, element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
+                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText }, restriction: 'none', visual: headline ? {headline, text, position, layout, element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
                 </Group>
             </Stack>
         </Modal>);
