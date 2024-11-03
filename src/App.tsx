@@ -29,7 +29,7 @@ function App() {
 
     useEffect(() => {
         fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/get?token=' + token).then(res => res.json()).then(data => {
-            setAppContext((context) => ({...context, alertConfig: data}));
+            setAppContext((context) => ({...context, alertConfig: {...context.alertConfig, ...data}}));
         });
 
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/ai/voices?token=' + token).then(res => res.json()).then((data: AITTSVoice[]) => {
