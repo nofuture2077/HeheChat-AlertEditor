@@ -106,8 +106,8 @@ export function AlertView(props: {
                     <Fieldset legend="Browser Overlay">
                         <Stack>
                             <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
-                            <TextInput label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></TextInput>
-                            <TextInput label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></TextInput>
+                            <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
+                            <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
                             <TextInput label="Layout" value={layout} onChange={(ev) => setLayout(ev.target.value)}></TextInput>
                             <TextInput label="Position" value={position} onChange={(ev) => setPosition(ev.target.value)}></TextInput>
                         </Stack>
@@ -119,7 +119,7 @@ export function AlertView(props: {
                             {voiceType === 'ai' ? <Select label="AI Voice" data={config.aiVoices.map(v => v.name)} value={voice} onChange={(value) => setVoice(value || '')} /> : voiceType === 'google' ? <TextInput label="Voice" value={voice} onChange={(v) => setVoice(v.target.value)}></TextInput> : null}
                             {voiceType === 'none' ? null : (
                                 <>
-                                    <Textarea label="TTS Text" value={ttsText} onChange={(ev) => setTTSText(ev.target.value)}></Textarea>
+                                    <Textarea autosize minRows={1} maxRows={3} label="TTS Text" value={ttsText} onChange={(ev) => setTTSText(ev.target.value)}></Textarea>
                                     <Text fs="italic">{InfoText}</Text>
                                 </>
                             )}
