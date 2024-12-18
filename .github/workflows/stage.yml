@@ -3,7 +3,7 @@ name: Deploy to AWS
 on:
   push:
     branches:
-      - release
+      - stage
 
 jobs:
   build-and-deploy:
@@ -34,7 +34,7 @@ jobs:
           AWS_SSH_HOST: ${{ secrets.AWS_SSH_HOST }}
           AWS_SSH_USER: ${{ secrets.AWS_SSH_USER }}
           AWS_SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
-          AWS_SSH_PATH: '/home/ec2-user/live/hehechat-editor'
+          AWS_SSH_PATH: '/home/ec2-user/stage/hehechat-editor'
         run: |
           mkdir -p ~/.ssh
           echo "${AWS_SSH_KEY}" > ~/.ssh/id_rsa
