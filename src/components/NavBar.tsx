@@ -75,6 +75,7 @@ export function AlertView(props: {
     const [specType, setSpecType] = useState<'min' | 'exact' | 'matches'>(props.data?.specifier.type || 'min');
     const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
     const [specText, setSpecText] = useState<string>(props.data?.specifier.text || '');
+    const [specAttribute, setSpecAttribute] = useState<string | undefined>(props.data?.specifier.attribute || '');
 
     const [jingle, setJingle] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.audio?.jingle) && x.id)?.name || 'id', id: (props.data?.audio?.jingle || "") });
     const [image, setImage] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.visual?.element) && x.id)?.name || 'id', id: (props.data?.visual?.element || "") });
@@ -99,7 +100,10 @@ export function AlertView(props: {
                         <Stack>
                             <Select label="Type" data={['min', 'exact', 'matches']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' | 'matches' || specType)} />
                             {nummberSpecType ? <NumberInput label="Amount" value={specAmount} onChange={(val) => setSpecAmount(Number(val))} /> : 
-                            <TextInput label="Text" value={specText} onChange={(ev) => setSpecText(ev.target.value)} />}
+                            <>
+                                <Select label="Attribute" value={specAttribute} data={['rewardTitle', 'username']} onChange={(value) => setSpecAttribute(value || undefined)} />
+                                <TextInput label="Text" value={specText} onChange={(ev) => setSpecText(ev.target.value)} />
+                            </>}
                         </Stack>
                     </Fieldset>
 
@@ -129,7 +133,7 @@ export function AlertView(props: {
                 </SimpleGrid>
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
-                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText }, restriction: 'none', visual: headline ? {headline, text, position, layout, element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
+                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText, attribute: nummberSpecType ? undefined : specAttribute }, restriction: 'none', visual: headline ? {headline, text, position, layout, element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
                 </Group>
             </Stack>
         </Modal>);

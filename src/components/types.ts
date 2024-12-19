@@ -32,9 +32,10 @@ export const EventTypeMapping: Record<EventType | EventMainType, EventMainType> 
 
 
 export type EventAlertSpecifier = {
-    type: 'min' | 'exact' | 'matches',
-    amount?: number,
-    text?: string
+    type: 'min' | 'exact' | 'matches';
+    amount?: number;
+    text?: string;
+    attribute?: string;
 }
 
 export type EventAlertMeta = {
