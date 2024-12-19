@@ -84,7 +84,7 @@ export function AlertView(props: {
 
     const nummberSpecType = specType === 'min' || specType === 'exact';
 
-    const InfoText = "You can use {{username}}, {{usernameTo}}, {{amount}}, {{amount2}} & {{text}} variables inside the text.";
+    const InfoText = "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
     const voiceTypes = config.aiVoices.length ? ['ai', 'google', 'none'] : ['google', 'none'];
     return (
         <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false} size='xl'>
