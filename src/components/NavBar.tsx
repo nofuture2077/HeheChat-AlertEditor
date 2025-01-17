@@ -1,6 +1,6 @@
 import { useContext, ReactElement, useState } from 'react';
 import { AppContext } from '@/ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventType, EventTypeMapping } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant } from '@tabler/icons-react';
@@ -39,6 +39,21 @@ const alertTypes: Record<string, string> = {
     "channelPointRedemption": "Channel Points"
 };
 
+const AVAILABLE_CLASSES = {
+    position: {
+      vertical: ['top', 'middle', 'bottom'],
+      horizontal: ['left', 'center', 'right']
+    },
+    layout: {
+      alignment: ['align-left', 'align-center', 'align-right'],
+      headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl'],
+      textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'],
+      effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch'],
+      colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal']
+    }
+  };
+  
+
 export function ConfirmDeleteView(props: {
     title: string;
     close: () => void;
@@ -69,8 +84,8 @@ export function AlertView(props: {
     const [ttsText, setTTSText] = useState(props.data?.audio?.tts?.text || "");
     const [headline, setHeadline] = useState(props.data?.visual?.headline|| "");
     const [text, setText] = useState(props.data?.visual?.text || "");
-    const [layout, setLayout] = useState(props.data?.visual?.layout || "");
-    const [position, setPosition] = useState(props.data?.visual?.position || "");
+    const [layout, setLayout] = useState<string[]>((props.data?.visual?.layout || "").split(' ').filter(Boolean));
+    const [position, setPosition] = useState<string[]>((props.data?.visual?.position || "").split(' ').filter(Boolean));
     const [type, setType] = useState<EventMainType>(props.type);
     const [specType, setSpecType] = useState<'min' | 'exact' | 'matches'>(props.data?.specifier.type || 'min');
     const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
@@ -112,8 +127,27 @@ export function AlertView(props: {
                             <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
                             <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
                             <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
-                            <TextInput label="Layout" value={layout} onChange={(ev) => setLayout(ev.target.value)}></TextInput>
-                            <TextInput label="Position" value={position} onChange={(ev) => setPosition(ev.target.value)}></TextInput>
+                            <MultiSelect
+                                label="Layout"
+                                value={layout}
+                                onChange={setLayout}
+                                data={[
+                                    { group: 'Alignment', items: AVAILABLE_CLASSES.layout.alignment.map(v => ({ value: v, label: v })) },
+                                    { group: 'Headline Sizes', items: AVAILABLE_CLASSES.layout.headlineSizes.map(v => ({ value: v, label: v })) },
+                                    { group: 'Text Sizes', items: AVAILABLE_CLASSES.layout.textSizes.map(v => ({ value: v, label: v })) },
+                                    { group: 'Effects', items: AVAILABLE_CLASSES.layout.effects.map(v => ({ value: v, label: v })) },
+                                    { group: 'Colors', items: AVAILABLE_CLASSES.layout.colors.map(v => ({ value: v, label: v })) }
+                                ]}
+                            />
+                            <MultiSelect
+                                label="Position"
+                                value={position}
+                                onChange={setPosition}
+                                data={[
+                                    { group: 'Vertical', items: AVAILABLE_CLASSES.position.vertical.map(v => ({ value: v, label: v })) },
+                                    { group: 'Horizontal', items: AVAILABLE_CLASSES.position.horizontal.map(v => ({ value: v, label: v })) }
+                                ]}
+                            />
                         </Stack>
                     </Fieldset>
 
@@ -133,7 +167,7 @@ export function AlertView(props: {
                 </SimpleGrid>
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
-                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText, attribute: nummberSpecType ? undefined : specAttribute }, restriction: 'none', visual: headline ? {headline, text, position, layout, element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
+                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText, attribute: nummberSpecType ? undefined : specAttribute }, restriction: 'none', visual: headline ? {headline, text, position: position.join(' '), layout: layout.join(' '), element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
                 </Group>
             </Stack>
         </Modal>);
