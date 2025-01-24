@@ -1,8 +1,9 @@
 import { useContext, ReactElement, useState } from 'react';
-import { AppContext } from '@/ApplicationContext';
+import { AppContext, AppContextProps } from '../ApplicationContext';
 import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect } from '@mantine/core'
+import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
-import { Base64File, EventAlert, EventMainType, EventType, EventTypeMapping } from './types'
+import { Base64File, EventAlert, EventMainType, EventTypeMapping } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile } from './helper';
@@ -78,7 +79,7 @@ export function AlertView(props: {
     close: () => void;
     confirm: (date: EventAlert) => void;
 }) {
-    const config = useContext(AppContext);
+    const config = useContext<AppContextProps>(AppContext);
     const [id, setId] = useState(props.data?.id || generateGUID());
     const [name, setName] = useState(props.data?.name || "");
     const [ttsText, setTTSText] = useState(props.data?.audio?.tts?.text || "");
@@ -210,7 +211,7 @@ export function UploadFileView(props: {
 
 
 export function Navigation(props: NavigationProps) {
-    const appContext = useContext(AppContext);
+    const appContext = useContext<AppContextProps>(AppContext);
     const [confirmDeleteOpen, confirmDeleteHandler] = useDisclosure(false);
     const [confirmDeleteComponent, setConfirmDeleteComponent] = useState<ReactElement | undefined>(undefined);
 
@@ -230,7 +231,7 @@ export function Navigation(props: NavigationProps) {
     const addAlert = function (data: EventAlert) {
         const config = appContext.alertConfig;
         const array = config.data!.alerts[EventTypeMapping[data.type]];
-        const index = array.findIndex(obj => obj.id === data.id);
+        const index = array.findIndex((obj: EventAlert) => obj.id === data.id);
 
         if (index !== -1) {
             array[index] = data;
@@ -254,7 +255,7 @@ export function Navigation(props: NavigationProps) {
     const deleteAlert = function (alertId: string) {
         const config = appContext.alertConfig;
         Object.keys(config.data!.alerts).forEach((evType) => {
-            config.data!.alerts[evType as EventMainType] = config.data!.alerts[evType as EventMainType].filter(x => x.id !== alertId);
+            config.data!.alerts[evType as EventMainType] = config.data!.alerts[evType as EventMainType].filter((x: EventAlert) => x.id !== alertId);
         });
         appContext.setAlertConfig(config);
         confirmDeleteHandler.close();
@@ -283,11 +284,59 @@ export function Navigation(props: NavigationProps) {
         </NavLink>
     })}</>;
 
+    const [previewFile, setPreviewFile] = useState<Base64File | null>(null);
+    const [previewOpened, setPreviewOpened] = useState(false);
+
+    const handlePreviewClose = () => {
+        setPreviewOpened(false);
+        setPreviewFile(null);
+    };
+
+    const handleFileRename = (id: string, newName: string) => {
+        const config = appContext.alertConfig;
+        if (config.data?.files[id]) {
+            config.data.files[id].name = newName;
+            appContext.setAlertConfig(config);
+        }
+    };
+
+    const handlePreviewOpen = (file: Base64File) => {
+        setPreviewFile(file);
+        setPreviewOpened(true);
+    };
+
     const fileNodes = <>{Object.values(appContext.alertConfig.data?.files || {}).map((file) => {
-        return <NavLink leftSection={fileTypeIcon[file.type]} rightSection={<ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete File: \"" + file.name + "\"?", () => deleteFile(file.id))}><IconTrash /></ActionIcon>} key={file.id} label={file.name} />
+        return <NavLink 
+            leftSection={
+                <ActionIcon variant='transparent' onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handlePreviewOpen(file);
+                }}>
+                    {fileTypeIcon[file.type]}
+                </ActionIcon>
+            } 
+            rightSection={
+                <ActionIcon variant='subtle' onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    confirmDeleteAlert("Are you sure to delete File: \"" + file.name + "\"?", () => deleteFile(file.id));
+                }}>
+                    <IconTrash />
+                </ActionIcon>
+            } 
+            key={file.id} 
+            label={file.name}
+        />
     })}</>;
 
     return <ScrollArea>
+        <FilePreviewModal
+            opened={previewOpened}
+            onClose={handlePreviewClose}
+            onRename={handleFileRename}
+            file={previewFile}
+        />
         {confirmDeleteOpen ? confirmDeleteComponent : null}
         <Text>Meta-Information</Text>
         <TextInput label="Channel" value={appContext.alertConfig.meta.channel} readOnly disabled />
