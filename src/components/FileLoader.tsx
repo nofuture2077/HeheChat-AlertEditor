@@ -1,6 +1,6 @@
 import { FileInput } from '@mantine/core';
 import { useState } from 'react';
-import { EventAlertConfig } from '@/components/types';
+import { EventAlertConfig } from './types';
 
 export const FileLoader = ({ onLoad }: { onLoad: (config: EventAlertConfig) => void }) => {
   const [file, setFile] = useState<File | null>(null);

@@ -1,5 +1,5 @@
 import { Button } from '@mantine/core';
-import { EventAlertConfig } from '@/components/types';
+import { EventAlertConfig } from './types';
 
 export const FileSaver = ({ config }: { config: EventAlertConfig }) => {
   const handleSave = () => {

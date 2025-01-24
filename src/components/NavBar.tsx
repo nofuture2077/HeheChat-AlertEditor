@@ -80,14 +80,14 @@ export function AlertView(props: {
     confirm: (date: EventAlert) => void;
 }) {
     const config = useContext<AppContextProps>(AppContext);
-    const [id, setId] = useState(props.data?.id || generateGUID());
+    const [id] = useState(props.data?.id || generateGUID());
     const [name, setName] = useState(props.data?.name || "");
     const [ttsText, setTTSText] = useState(props.data?.audio?.tts?.text || "");
     const [headline, setHeadline] = useState(props.data?.visual?.headline|| "");
     const [text, setText] = useState(props.data?.visual?.text || "");
     const [layout, setLayout] = useState<string[]>((props.data?.visual?.layout || "").split(' ').filter(Boolean));
     const [position, setPosition] = useState<string[]>((props.data?.visual?.position || "").split(' ').filter(Boolean));
-    const [type, setType] = useState<EventMainType>(props.type);
+    const [type] = useState<EventMainType>(props.type);
     const [specType, setSpecType] = useState<'min' | 'exact' | 'matches'>(props.data?.specifier.type || 'min');
     const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
     const [specText, setSpecText] = useState<string>(props.data?.specifier.text || '');

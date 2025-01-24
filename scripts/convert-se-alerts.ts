@@ -498,6 +498,7 @@ async function convertStreamElementsConfig(seConfig: any): Promise<EventAlertCon
         meta: {
             channel: seConfig.channel.username || '',
             name: seConfig.overlay.name ||  seConfig.channel.username + ' Alerts',
+            hash: '',
             guid: generateGUID(),
             lastUpdate: new Date().toISOString()
         },
@@ -507,7 +508,7 @@ async function convertStreamElementsConfig(seConfig: any): Promise<EventAlertCon
         }
     };
 
-    config.meta.hash = hashObjectSHA256(config.data);
+    config.meta.hash = await hashObjectSHA256(config.data);
 
     // Log URL reuse statistics
     const urlStats = {
