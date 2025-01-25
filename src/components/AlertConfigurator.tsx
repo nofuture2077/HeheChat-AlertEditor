@@ -295,9 +295,21 @@ export function AlertConfigurator(props: NavigationProps) {
     const handleFileRename = (id: string, newName: string) => {
         const config = appContext.alertConfig;
         if (config.data?.files[id]) {
+            // Check if any other file already has this name
+            const nameExists = Object.values(config.data.files).some(
+                file => file.id !== id && file.name === newName
+            );
+            
+            if (nameExists) {
+                // If name exists, don't update and return false to indicate failure
+                return false;
+            }
+            
             config.data.files[id].name = newName;
             appContext.setAlertConfig(config);
+            return true;
         }
+        return false;
     };
 
     const handlePreviewOpen = (file: Base64File) => {

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Stack, TextInput, Group, Button } from '@mantine/core';
+import { Modal, Stack, TextInput, Group, Button, Text } from '@mantine/core';
+import { formatFileSize } from './helper';
 
 interface FilePreviewModalProps {
   opened: boolean;
   onClose: () => void;
-  onRename: (id: string, newName: string) => void;
+  onRename: (id: string, newName: string) => boolean;
   file: {
     id: string;
     name: string;
@@ -17,6 +18,7 @@ interface FilePreviewModalProps {
 export function FilePreviewModal({ opened, onClose, onRename, file }: FilePreviewModalProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [error, setError] = useState('');
 
   React.useEffect(() => {
     if (file) {
@@ -26,8 +28,13 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
 
   const handleRename = () => {
     if (onRename && file && fileName.trim()) {
-      onRename(file.id, fileName.trim());
-      setIsRenaming(false);
+      setError('');
+      const success = onRename(file.id, fileName.trim());
+      if (success) {
+        setIsRenaming(false);
+      } else {
+        setError('A file with this name already exists');
+      }
     }
   };
 
@@ -36,7 +43,7 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
   const fileUrl = `data:${file.mime};base64,${file.data}`;
 
   return (
-    <Modal opened={opened} onClose={onClose} title="File Preview" size="lg">
+    <Modal opened={opened} onClose={onClose} title={`${file.name} (${formatFileSize(Math.ceil(file.data.length * 0.75))})`} size="lg">
       <Stack>
         {file.type === 'image' && (
           <img
@@ -66,8 +73,12 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
             <TextInput
               placeholder="Enter file name"
               value={fileName}
-              onChange={(event) => setFileName(event.currentTarget.value)}
+              onChange={(event) => {
+                setFileName(event.currentTarget.value);
+                setError('');
+              }}
               style={{ flex: 1 }}
+              error={error}
             />
             <Button onClick={handleRename} color="blue">Save</Button>
             <Button onClick={() => setIsRenaming(false)} variant="subtle">Cancel</Button>
