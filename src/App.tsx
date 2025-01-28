@@ -56,6 +56,7 @@ function App() {
     }
 
     const replayEvent = async function (event: any) {
+        event.force = true;
         return fetch(import.meta.env.VITE_BACKEND_URL + '/event/replay?sink=' + appContext.sink, {
             method: 'POST',
             body: JSON.stringify({
