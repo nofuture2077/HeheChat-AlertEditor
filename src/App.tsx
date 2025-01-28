@@ -32,6 +32,10 @@ function App() {
             setAppContext((context) => ({...context, alertConfig: {...data, data: {...data.data, alerts: {...context.alertConfig.data?.alerts, ...data.data.alerts}}}}));
         });
 
+        fetch(import.meta.env.VITE_BACKEND_URL + "/sink/get?token=" + token).then(res => res.json()).then(data => {
+            setAppContext((context) => ({...context, sink: data.sink}));
+        });
+
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/ai/voices?token=' + token).then(res => res.json()).then((data: AITTSVoice[]) => {
             const voices = data.filter(v => v.category === 'cloned').map((v) => ({voice_id: v.voice_id, name: v.name, preview_url: v.preview_url, category: v.category}));
             setAppContext((context) => ({...context, aiVoices: voices}));
@@ -51,8 +55,18 @@ function App() {
         }).then(() => undefined);
     }
 
+    const replayEvent = async function (event: any) {
+        return fetch(import.meta.env.VITE_BACKEND_URL + '/event/replay?sink=' + appContext.sink, {
+            method: 'POST',
+            body: JSON.stringify({
+                type: 'replayevent',
+                data: event
+            }),
+        });
+    }
+
     return <MantineProvider defaultColorScheme="auto" theme={theme}>
-            <AppContext.Provider value={{...appContext, setAlertConfig, uploadAlertConfig}}>
+            <AppContext.Provider value={{...appContext, setAlertConfig, uploadAlertConfig, replayEvent}}>
                 <AlertEditor />
             </AppContext.Provider>
         </MantineProvider>;

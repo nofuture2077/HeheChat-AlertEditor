@@ -527,8 +527,13 @@ async function convertStreamElementsConfig(seConfig: any): Promise<EventAlertCon
 // Main execution
 async function main() {
     try {
-        const seConfigPath = path.join(process.cwd(), 'data', 'foxer_alert_se.json');
-        const seConfig = JSON.parse(fs.readFileSync(seConfigPath, 'utf8'));
+        if (process.argv.length < 3) {
+            console.error('Usage: ts-node convert-se-alerts.ts <input-file-path>');
+            process.exit(1);
+        }
+
+        const inputPath = process.argv[2];
+        const seConfig = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
         
         const convertedConfig = await convertStreamElementsConfig(seConfig);
         
