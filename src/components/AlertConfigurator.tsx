@@ -42,15 +42,18 @@ const alertTypes: Record<string, string> = {
 
 const AVAILABLE_CLASSES = {
     position: {
-      vertical: ['top', 'middle', 'bottom'],
-      horizontal: ['left', 'center', 'right']
+        alignment: ['align-left', 'align-center', 'align-right'],
+        imageSizes: ['image-xs', 'image-sm', 'image-md', 'image-lg', 'image-xl'],
+        headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl'],
+        textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'],
+        vertical: ['top', 'middle', 'bottom'],
+        horizontal: ['left', 'center', 'right']
     },
     layout: {
-      alignment: ['align-left', 'align-center', 'align-right'],
-      headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl'],
-      textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'],
-      effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch'],
-      colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal']
+        headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'headline-uppercase'],
+        textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'text-uppercase'],
+        effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch'],
+        colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal']
     }
   };
   
@@ -129,13 +132,12 @@ export function AlertView(props: {
                             <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
                             <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
                             <MultiSelect
-                                label="Layout"
+                                label="Style"
                                 value={layout}
                                 onChange={setLayout}
                                 data={[
-                                    { group: 'Alignment', items: AVAILABLE_CLASSES.layout.alignment.map(v => ({ value: v, label: v })) },
-                                    { group: 'Headline Sizes', items: AVAILABLE_CLASSES.layout.headlineSizes.map(v => ({ value: v, label: v })) },
-                                    { group: 'Text Sizes', items: AVAILABLE_CLASSES.layout.textSizes.map(v => ({ value: v, label: v })) },
+                                    { group: 'Headline Font', items: AVAILABLE_CLASSES.layout.headlineFont.map(v => ({ value: v, label: v })) },
+                                    { group: 'Text Font', items: AVAILABLE_CLASSES.layout.textFont.map(v => ({ value: v, label: v })) },
                                     { group: 'Effects', items: AVAILABLE_CLASSES.layout.effects.map(v => ({ value: v, label: v })) },
                                     { group: 'Colors', items: AVAILABLE_CLASSES.layout.colors.map(v => ({ value: v, label: v })) }
                                 ]}
@@ -145,6 +147,10 @@ export function AlertView(props: {
                                 value={position}
                                 onChange={setPosition}
                                 data={[
+                                    { group: 'Alignment', items: AVAILABLE_CLASSES.position.alignment.map(v => ({ value: v, label: v })) },
+                                    { group: 'Image Sizes', items: AVAILABLE_CLASSES.position.imageSizes.map(v => ({ value: v, label: v })) },
+                                    { group: 'Headline Sizes', items: AVAILABLE_CLASSES.position.headlineSizes.map(v => ({ value: v, label: v })) },
+                                    { group: 'Text Sizes', items: AVAILABLE_CLASSES.position.textSizes.map(v => ({ value: v, label: v })) },
                                     { group: 'Vertical', items: AVAILABLE_CLASSES.position.vertical.map(v => ({ value: v, label: v })) },
                                     { group: 'Horizontal', items: AVAILABLE_CLASSES.position.horizontal.map(v => ({ value: v, label: v })) }
                                 ]}
