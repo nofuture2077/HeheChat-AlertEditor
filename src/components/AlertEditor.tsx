@@ -3,7 +3,7 @@ import { AppShell, Image, Group, Text, Button, ActionIcon } from '@mantine/core'
 import logo from '../logo.svg'
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
-import { IconUpload, IconPlayerPlay } from '@tabler/icons-react'
+import { IconUpload, IconPlayerPlay, IconBrowser, IconBrowserCheck } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 
 const AlertEditor = () => {
@@ -23,23 +23,31 @@ const AlertEditor = () => {
             <Image src={logo} h={32}/>
             <Text fw={700} size="18px">HEHE CHAT - Editor</Text>
           </Group>
-          { appContext.sink ? (
+          <Group>
+            { appContext.sink ? (
+              <>
+              <ActionIcon 
+              variant="light" 
+              onClick={() => {
+                setPreviewOpened(true);
+              }}
+            ><IconPlayerPlay /></ActionIcon>
             <ActionIcon 
-            variant="light" 
-            onClick={() => {
-              setPreviewOpened(true);
-              window.open(import.meta.env.VITE_SINK_URL + "#token=" + appContext.sink, '_blank');
-            }}
-          ><IconPlayerPlay /></ActionIcon>
-          ) : <span></span>}
-          
-          <ActionIcon variant="light"
-          {...bProps}
-          onClick={() => {setSave(true);appContext.uploadAlertConfig().then(() => {
-            setSave(false);
-          })}}
-          gradient={{ from: 'blue', to: 'cyan', deg: 90 }}><IconUpload/></ActionIcon>
-        </Group>
+              variant="light" 
+              onClick={() => {
+                window.open(import.meta.env.VITE_SINK_URL + "#token=" + appContext.sink + "&preview=true", '_blank');
+              }}
+            ><IconBrowserCheck /></ActionIcon>
+            </>
+            ) : <><span></span><span></span></>}
+            
+            <ActionIcon variant="light"
+            {...bProps}
+            onClick={() => {setSave(true);appContext.uploadAlertConfig().then(() => {
+              setSave(false);
+            })}}><IconUpload/></ActionIcon>
+          </Group>
+          </Group>
       </AppShell.Header>
 
       <AppShell.Main>
