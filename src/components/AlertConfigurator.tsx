@@ -53,7 +53,7 @@ const AVAILABLE_CLASSES = {
         headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'headline-uppercase'],
         textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'text-uppercase'],
         effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch'],
-        colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal']
+        colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal', 'violett', 'text-dark']
     }
   };
   
