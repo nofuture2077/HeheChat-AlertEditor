@@ -57,6 +57,7 @@ const AlertEditor = () => {
           opened={previewOpened}
           onClose={() => setPreviewOpened(false)}
           onSubmit={appContext.replayEvent}
+          alertConfig={appContext.alertConfig}
         />
       </AppShell.Main>
     </AppShell>

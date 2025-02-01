@@ -1,4 +1,5 @@
 import { generateGUID } from './helper';
+import _ from "underscore";
 
 export type EventType = 'raid' | 'follow' | 'cheer'| 'donation' |
 'sub_1000' | 'sub_2000' | 'sub_3000' | 'sub_Prime' | 
@@ -136,4 +137,66 @@ export interface AITTSVoice {
   name: string;
   category: string;
   preview_url: string;
+}
+
+export type Event = {
+    id: number;
+    channel: string; 
+    username: string; 
+    eventtype: EventType;
+    date: number;
+    usernameTo?: string;
+    text?: string;
+    amount?: number;
+    amount2?: number;
+    eventAlert?: EventAlert;
+}
+
+export function getAlert(event: Event, eventData: any, alertConfig: EventAlertConfig): EventAlert | undefined {
+    if (event.eventAlert) {
+        return event.eventAlert;
+    }
+    const eventMainType = EventTypeMapping[event.eventtype] as EventMainType;
+    const alerts = alertConfig.data?.alerts[eventMainType];
+    if (!alerts) {
+        return undefined;
+    }
+    const exactAlerts: Record<number, EventAlert[]> = {};
+    const minAlerts: Record<number, EventAlert[]> = {};
+    const matchesAlerts: EventAlert[] = [];
+
+    alerts.forEach(alert => {
+        const amount = Number(alert.specifier.amount || 0);
+        if (alert.specifier.type === "exact") {
+            if (exactAlerts[amount]) {
+                exactAlerts[amount].push(alert)
+            } else {
+                exactAlerts[amount] = [alert];
+            }
+        }
+        if (alert.specifier.type === "min") {
+            if (minAlerts[amount]) {
+                minAlerts[amount].push(alert)
+            } else {
+                minAlerts[amount] = [alert];
+            }
+        }
+        if (alert.specifier.type === "matches" && alert.specifier.text && 
+            alert.specifier.attribute && (eventData[alert.specifier.attribute] === alert.specifier.text)) {
+                matchesAlerts.push(alert);
+        }
+    });
+    const eventAmount = Number(event.amount || 0);
+    const exactAlertMatches = exactAlerts[eventAmount];
+    if (exactAlertMatches && exactAlertMatches.length) {
+        return _.sample(exactAlertMatches);
+    }
+    if (matchesAlerts.length) {
+        return _.sample(matchesAlerts);
+    }
+    const minKeys: number[] = Object.keys(minAlerts).map(x => Number(x)).sort((a, b) => a - b);
+    const step = minKeys.findLast(x => x <= eventAmount);
+    if (step || step === 0) {
+        return _.sample(minAlerts[step]);
+    }
 }

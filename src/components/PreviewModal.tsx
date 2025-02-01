@@ -1,15 +1,16 @@
 import { Modal, Select, TextInput, Button, Stack, NumberInput } from '@mantine/core';
 import { useState, useEffect } from 'react';
-import { EventMainType, EventType, EventTypeMapping } from './types';
+import { EventMainType, EventType, EventTypeMapping, getAlert, Event, EventAlertConfig } from './types';
 
 interface PreviewModalProps {
+  alertConfig: EventAlertConfig;
   channel: string;
   opened: boolean;
   onClose: () => void;
   onSubmit: (event: any) => void;
 }
 
-export function PreviewModal({ opened, onClose, onSubmit, channel }: PreviewModalProps) {
+export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }: PreviewModalProps) {
   const [mainType, setMainType] = useState<EventMainType>('follow');
   const [eventType, setEventType] = useState<EventType>('follow');
   const [username, setUsername] = useState('TestUser');
@@ -17,6 +18,7 @@ export function PreviewModal({ opened, onClose, onSubmit, channel }: PreviewModa
   const [amount, setAmount] = useState<number | ''>(1000);
   const [amount2, setAmount2] = useState<number | ''>(1);
   const [text, setText] = useState('Test message');
+  const [rewardTitle, setRewardTitle] = useState('TTS');
 
   const mainTypes: EventMainType[] = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption'];
   
@@ -37,7 +39,12 @@ export function PreviewModal({ opened, onClose, onSubmit, channel }: PreviewModa
   }, [mainType]);
 
   const handleSubmit = () => {
-    const event = {
+    const eventData = {
+      rewardTitle,
+      username,
+      eventType
+    };
+    const event: Event = {
       id: Date.now(),
       channel,
       username,
@@ -47,7 +54,9 @@ export function PreviewModal({ opened, onClose, onSubmit, channel }: PreviewModa
       ...(text && { text }),
       ...(amount !== '' && { amount }),
       ...(amount2 !== '' && mainType === 'sub' && { amount2 }),
+      text: JSON.stringify(eventData),
     };
+    event.eventAlert = getAlert(event, eventData, alertConfig);
     onSubmit(event);
   };
 
@@ -106,6 +115,14 @@ export function PreviewModal({ opened, onClose, onSubmit, channel }: PreviewModa
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
+
+        {mainType === 'channelPointRedemption' && (
+          <TextInput
+            label="Reward Title"
+            value={rewardTitle}
+            onChange={(e) => setRewardTitle(e.target.value)}
+          />
+        )}
 
         <Button onClick={handleSubmit}>Fire Event</Button>
       </Stack>
