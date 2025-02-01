@@ -43,7 +43,7 @@ export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }
       rewardTitle,
       username,
       eventType,
-      text
+      text: [{text}]
     };
     const event: Event = {
       id: Date.now(),
