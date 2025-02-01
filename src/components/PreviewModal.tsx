@@ -42,7 +42,8 @@ export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }
     const eventData = {
       rewardTitle,
       username,
-      eventType
+      eventType,
+      text
     };
     const event: Event = {
       id: Date.now(),
@@ -51,7 +52,6 @@ export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }
       eventtype: eventType,
       date: Date.now(),
       ...(usernameTo && mainType === 'subgiftb' && { usernameTo }),
-      ...(text && { text }),
       ...(amount !== '' && { amount }),
       ...(amount2 !== '' && mainType === 'sub' && { amount2 }),
       text: JSON.stringify(eventData),
