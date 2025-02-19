@@ -50,8 +50,8 @@ const AVAILABLE_CLASSES = {
         horizontal: ['left', 'center', 'right']
     },
     layout: {
-        headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'headline-uppercase'],
-        textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'text-uppercase'],
+        headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'font-headline-fjallaone', 'font-headline-ericaone', 'font-headline-daysone', 'font-headline-pressstart2p', 'font-headline-ultra', 'headline-uppercase'],
+        textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'font-text-fjallaone', 'font-text-ericaone', 'font-text-daysone', 'font-text-pressstart2p', 'font-text-ultra', 'text-uppercase'],
         effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch'],
         colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal', 'violett', 'text-dark']
     }
