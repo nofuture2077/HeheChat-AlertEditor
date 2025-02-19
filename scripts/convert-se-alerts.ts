@@ -233,7 +233,11 @@ async function convertToWebP(buffer: Buffer, mimeType: string): Promise<{ buffer
     }
 }
 
-async function downloadAndConvertToBase64(url: string, alertType?: string): Promise<{ base64: string; mimeType: string; fileName: string }> {
+async function downloadAndConvertToBase64(
+    url: string, 
+    alertType?: string,
+    existingFiles?: Record<string, Base64File>
+): Promise<{ base64: string; mimeType: string; fileName: string }> {
     try {
         const response = await axios.get(url, { responseType: 'arraybuffer' });
         const originalMimeType = getMimeType(url);
@@ -244,9 +248,22 @@ async function downloadAndConvertToBase64(url: string, alertType?: string): Prom
         
         // Generate a readable filename
         const originalName = path.basename(url);
-        const sanitizedName = sanitizeFileName(originalName);
+        let sanitizedName = sanitizeFileName(originalName);
+        
+        // Use eventType as default name if sanitized name is empty
+        if (!sanitizedName) {
+            sanitizedName = alertType || 'alert';
+        }
+        
         const prefix = alertType ? `${alertType}_` : '';
-        const finalName = `${prefix}${sanitizedName}`;
+        let finalName = `${prefix}${sanitizedName}`;
+        
+        // Add numeric postfix if name exists in existingFiles
+        let counter = 1;
+        while (existingFiles && Object.values(existingFiles).some(file => file.name.startsWith(finalName))) {
+            finalName = `${prefix}${sanitizedName}-${counter}`;
+            counter++;
+        }
         
         // Convert to WebP if it's an image
         if (originalMimeType.startsWith('image/')) {
@@ -375,7 +392,7 @@ async function convertAlert(
             fileId = urlToFileId[graphicsUrl];
         } else {
             fileId = uuidv4();
-            const { base64: base64Data, mimeType, fileName } = await downloadAndConvertToBase64(graphicsUrl, alertType);
+            const { base64: base64Data, mimeType, fileName } = await downloadAndConvertToBase64(graphicsUrl, alertType, files);
             const fileType = getFileType(mimeType);
             
             files[fileId] = {
@@ -404,7 +421,7 @@ async function convertAlert(
             fileId = urlToFileId[audioUrl];
         } else {
             fileId = generateGUID();
-            const { base64: base64Data, mimeType } = await downloadAndConvertToBase64(audioUrl, alertType);
+            const { base64: base64Data, mimeType } = await downloadAndConvertToBase64(audioUrl, alertType, files);
             
             files[fileId] = {
                 id: fileId,
@@ -449,10 +466,10 @@ async function convertStreamElementsConfig(seConfig: any): Promise<EventAlertCon
         channelPointRedemption: []
     };
 
-    // Process subscriber alerts
-    const subWidget = seConfig.overlay.widgets.find((w: any) => w.type === 'se-widget-alert-box');
-    if (subWidget) {
-        // Process main alerts
+    // Process all alert box widgets
+    const alertBoxWidgets = seConfig.overlay.widgets.filter((w: any) => w.type === 'se-widget-alert-box');
+    for (const subWidget of alertBoxWidgets) {
+        // Process main alerts for this widget
         for (const eventType of ['subscriber', 'tip', 'cheer', 'raid', 'follow']) {
             const eventData = subWidget.variables[eventType];
             if (eventData?.enabled) {
