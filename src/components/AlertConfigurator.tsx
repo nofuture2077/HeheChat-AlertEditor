@@ -1,10 +1,10 @@
 import { useContext, ReactElement, useState } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile } from './helper';
 
@@ -74,6 +74,52 @@ export function ConfirmDeleteView(props: {
         </Modal>);
 }
 
+export function CopyLayoutModal(props: {
+    sourceAlert: EventAlert;
+    alerts: Record<EventMainType, EventAlert[]> | { [K in EventMainType]: EventAlert[] };
+    onClose: () => void;
+    onCopy: (targetAlertIds: string[]) => void;
+}) {
+    const [selectedAlerts, setSelectedAlerts] = useState<string[]>([]);
+    const allAlerts = Object.values(props.alerts).flat();
+    
+    return (
+        <Modal opened={true} onClose={props.onClose} title="Copy Layout & Position">
+            <Stack>
+                <Text size="sm">Select alerts to copy layout and position to:</Text>
+                {allAlerts
+                    .filter(alert => alert.id !== props.sourceAlert.id)
+                    .map(alert => (
+                        <Checkbox
+                            key={alert.id}
+                            label={`${alertTypes[alert.type]} - ${alert.name}`}
+                            checked={selectedAlerts.includes(alert.id)}
+                            onChange={(event) => {
+                                if (event.currentTarget.checked) {
+                                    setSelectedAlerts([...selectedAlerts, alert.id]);
+                                } else {
+                                    setSelectedAlerts(selectedAlerts.filter(id => id !== alert.id));
+                                }
+                            }}
+                        />
+                    ))
+                }
+                <Group justify="space-around" mt="md">
+                    <Button onClick={props.onClose}>Cancel</Button>
+                    <Button 
+                        variant="filled" 
+                        color="blue" 
+                        onClick={() => props.onCopy(selectedAlerts)}
+                        disabled={selectedAlerts.length === 0}
+                    >
+                        Copy to Selected
+                    </Button>
+                </Group>
+            </Stack>
+        </Modal>
+    );
+}
+
 export function AlertView(props: {
     data?: EventAlert,
     type: EventMainType,
@@ -99,6 +145,38 @@ export function AlertView(props: {
     const [jingle, setJingle] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.audio?.jingle) && x.id)?.name || 'id', id: (props.data?.audio?.jingle || "") });
     const [image, setImage] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.visual?.element) && x.id)?.name || 'id', id: (props.data?.visual?.element || "") });
     const [voiceType, setVoiceType] = useState<'ai' | 'google' | 'none'>(props.data?.audio?.tts?.voiceType || 'none');
+    const [showCopyModal, setShowCopyModal] = useState(false);
+    const appContext = useContext<AppContextProps>(AppContext);
+
+    const handleCopyLayout = (targetAlertIds: string[]) => {
+        const layoutConfig = {
+            position: position.join(' '),
+            layout: layout.join(' ')
+        };
+        
+        targetAlertIds.forEach(targetId => {
+            const targetAlert = Object.values(appContext.alertConfig.data?.alerts || {})
+                .flat()
+                .find((alert: EventAlert) => alert.id === targetId);
+            
+            if (targetAlert) {
+                const updatedAlert: EventAlert = {
+                    ...targetAlert,
+                    visual: {
+                        ...targetAlert.visual,
+                        headline: targetAlert.visual?.headline || '',
+                        position: layoutConfig.position,
+                        layout: layoutConfig.layout,
+                        element: targetAlert.visual?.element
+                    }
+                };
+                props.confirm(updatedAlert);
+            }
+        });
+        
+        setShowCopyModal(false);
+        props.close();
+    };
     const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
 
     const nummberSpecType = specType === 'min' || specType === 'exact';
@@ -174,8 +252,34 @@ export function AlertView(props: {
                 </SimpleGrid>
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
+                    <Button 
+                        variant="outline" 
+                        color="blue" 
+                        onClick={() => setShowCopyModal(true)}
+                        leftSection={<IconCopy size={16} />}
+                        disabled={!position.length && !layout.length}
+                    >
+                        Copy Layout
+                    </Button>
                     <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText, attribute: nummberSpecType ? undefined : specAttribute }, restriction: 'none', visual: headline ? {headline, text, position: position.join(' '), layout: layout.join(' '), element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
                 </Group>
+                {showCopyModal && (
+                    <CopyLayoutModal
+                        sourceAlert={{ id, name, type, specifier: { type: specType }, restriction: 'none' }}
+                        alerts={appContext.alertConfig.data?.alerts || {
+                            sub: [],
+                            subgift: [],
+                            subgiftb: [],
+                            raid: [],
+                            follow: [],
+                            donation: [],
+                            cheer: [],
+                            channelPointRedemption: []
+                        }}
+                        onClose={() => setShowCopyModal(false)}
+                        onCopy={handleCopyLayout}
+                    />
+                )}
             </Stack>
         </Modal>);
 }
