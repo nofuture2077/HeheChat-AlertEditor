@@ -283,9 +283,18 @@ export function AlertConfigurator(props: NavigationProps) {
         confirmDeleteHandler.open();
     }
 
+    const cloneAlert = function(alert: EventAlert) {
+        const clonedAlert = {
+            ...alert,
+            id: generateGUID(),
+            name: alert.name + " Copy"
+        };
+        addAlertView(alert.type as EventMainType, 'Edit Alert: ' + clonedAlert.name, addAlert, clonedAlert);
+    };
+
     const alertNodes = <>{Object.keys(appContext.alertConfig.data?.alerts || {}).map((ev) => {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
-            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={<ActionIcon variant='transparent' onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)}>{icons[ev as EventMainType]}</ActionIcon>} rightSection={<ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon>} key={alert.id} label={alert.name} />)}
+            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={<ActionIcon variant='transparent' onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)}>{icons[ev as EventMainType]}</ActionIcon>} rightSection={<Group gap={0}><ActionIcon variant='subtle' onClick={() => cloneAlert(alert)}><IconPlus /></ActionIcon><ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon></Group>} key={alert.id} label={alert.name} />)}
             <NavLink leftSection={<IconPlus />} label="Add New" key={ev + "-new"} onClick={() => addAlertView(ev as EventMainType, 'Add Alert: ' + alertTypes[ev], addAlert)}></NavLink>
         </NavLink>
     })}</>;
