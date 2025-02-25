@@ -195,7 +195,7 @@ export function getAlert(event: Event, eventData: any, alertConfig: EventAlertCo
         return _.sample(matchesAlerts);
     }
     const minKeys: number[] = Object.keys(minAlerts).map(x => Number(x)).sort((a, b) => a - b);
-    const step = minKeys.findLast(x => x <= eventAmount);
+    const step = [...minKeys].reverse().find((x: number) => x <= eventAmount);
     if (step || step === 0) {
         return _.sample(minAlerts[step]);
     }
