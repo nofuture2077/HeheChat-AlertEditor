@@ -260,7 +260,7 @@ async function downloadAndConvertToBase64(
         
         // Add numeric postfix if name exists in existingFiles
         let counter = 1;
-        while (existingFiles && Object.values(existingFiles).some(file => file.name.startsWith(finalName))) {
+        while (existingFiles && Object.values(existingFiles).some(file => file.name?.startsWith(finalName))) {
             finalName = `${prefix}${sanitizedName}-${counter}`;
             counter++;
         }

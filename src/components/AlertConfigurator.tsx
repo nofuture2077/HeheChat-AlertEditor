@@ -44,6 +44,7 @@ const AVAILABLE_CLASSES = {
     position: {
         alignment: ['align-left', 'align-center', 'align-right'],
         imageSizes: ['image-xs', 'image-sm', 'image-md', 'image-lg', 'image-xl'],
+        imagePosition: ['image-fixed-bottom', 'image-fixed-left', 'image-fixed-right'],
         headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl'],
         textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'],
         vertical: ['top', 'middle', 'bottom'],
@@ -227,6 +228,7 @@ export function AlertView(props: {
                                 data={[
                                     { group: 'Alignment', items: AVAILABLE_CLASSES.position.alignment.map(v => ({ value: v, label: v })) },
                                     { group: 'Image Sizes', items: AVAILABLE_CLASSES.position.imageSizes.map(v => ({ value: v, label: v })) },
+                                    { group: 'Image Position', items: AVAILABLE_CLASSES.position.imagePosition.map(v => ({ value: v, label: v })) },
                                     { group: 'Headline Sizes', items: AVAILABLE_CLASSES.position.headlineSizes.map(v => ({ value: v, label: v })) },
                                     { group: 'Text Sizes', items: AVAILABLE_CLASSES.position.textSizes.map(v => ({ value: v, label: v })) },
                                     { group: 'Vertical', items: AVAILABLE_CLASSES.position.vertical.map(v => ({ value: v, label: v })) },
