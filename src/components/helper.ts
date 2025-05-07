@@ -40,3 +40,46 @@ export function formatFileSize(bytes: number): string {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
+
+export async function previewTTS(
+    text: string, 
+    voiceType: 'ai' | 'google' | 'none', 
+    voice: string, 
+    channel: string, 
+    sink: string
+): Promise<void> {
+    // Replace variables in the text
+    const previewText = text
+        .replace(/\${username}/g, "Peter453")
+        .replace(/\${usernameTo}/g, "HannaOG")
+        .replace(/\${amount}/g, "5")
+        .replace(/\${amount2}/g, "10")
+        .replace(/\${text}/g, "Sample message text");
+    
+    // Determine endpoint based on voice type
+    const endpoint = voiceType === 'ai' ? (import.meta.env.VITE_BACKEND_URL + '/tts/ai/generate') : (import.meta.env.VITE_BACKEND_URL + '/tts/generate');
+    
+    // Construct URL with query parameters
+    const url = `${endpoint}?text=${encodeURIComponent(previewText)}&voice=${encodeURIComponent(voice)}&channel=${encodeURIComponent(channel)}&sink=${encodeURIComponent(sink || '')}`;
+    
+    try {
+        // Fetch the audio file
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch TTS audio: ${response.statusText}`);
+        }
+        
+        // Get the audio data as blob
+        const audioBlob = await response.json();
+
+        
+        // Create and play audio element
+        const audio = new Audio("data:audio/mp3;base64," + audioBlob.audioContent);
+        
+        // Play the audio
+        await audio.play();
+    } catch (error) {
+        console.error('Error playing TTS preview:', error);
+        alert('Failed to play TTS preview. See console for details.');
+    }
+}

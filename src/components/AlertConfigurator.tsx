@@ -1,4 +1,4 @@
-import { useContext, ReactElement, useState } from 'react';
+import { useContext, ReactElement, useState, useMemo } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
 import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
@@ -6,7 +6,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
-import { generateGUID, readFile } from './helper';
+import { generateGUID, readFile, previewTTS } from './helper';
 
 export interface NavigationProps {
 }
@@ -179,7 +179,19 @@ export function AlertView(props: {
         props.close();
     };
     const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
-
+    
+    // Initialize selectedLanguage based on the existing voice if available
+    const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+        if (props.data?.audio?.tts?.voiceType === 'google' && props.data?.audio?.tts?.voiceSpecifier) {
+            // Try to find the voice in googleVoices
+            const voiceData = config.googleVoices.find(v => v.name === props.data?.audio?.tts?.voiceSpecifier);
+            if (voiceData && voiceData.languageCodes.length > 0) {
+                return voiceData.languageCodes[0];
+            }
+        }
+        return 'de-DE'; // Default to German
+    });
+    
     const nummberSpecType = specType === 'min' || specType === 'exact';
 
     const InfoText = "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
@@ -241,10 +253,142 @@ export function AlertView(props: {
                     <Fieldset legend="TTS">
                         <Stack>
                             <Select label="TTS System" data={voiceTypes} value={voiceType} onChange={(value) => setVoiceType(value as 'ai' | 'google' | 'none' || specType)} />
-                            {voiceType === 'ai' ? <Select label="AI Voice" data={config.aiVoices.map(v => v.name)} value={voice} onChange={(value) => setVoice(value || '')} /> : voiceType === 'google' ? <TextInput label="Voice" value={voice} onChange={(v) => setVoice(v.target.value)}></TextInput> : null}
+                            {voiceType === 'ai' ? (
+                                <Select 
+                                    label="AI Voice" 
+                                    data={config.aiVoices.map(v => v.name)} 
+                                    value={voice} 
+                                    onChange={(value) => setVoice(value || '')} 
+                                />
+                            ) : voiceType === 'google' ? (
+                                <>
+                                    <Select
+                                        label="Language"
+                                        data={Array.from(new Set(config.googleVoices.map(v => v.languageCodes[0]))).sort().map(lang => {
+                                            // Map language codes to more user-friendly names
+                                            const languageNames: Record<string, string> = {
+                                                'af-ZA': 'Afrikaans',
+                                                'am-ET': 'Amharic',
+                                                'ar-XA': 'Arabic',
+                                                'bg-BG': 'Bulgarian',
+                                                'bn-IN': 'Bengali',
+                                                'ca-ES': 'Catalan',
+                                                'cmn-CN': 'Chinese (Mandarin)',
+                                                'cmn-TW': 'Chinese (Taiwanese)',
+                                                'cs-CZ': 'Czech',
+                                                'da-DK': 'Danish',
+                                                'de-DE': 'German',
+                                                'el-GR': 'Greek',
+                                                'en-AU': 'English (Australia)',
+                                                'en-GB': 'English (UK)',
+                                                'en-IN': 'English (India)',
+                                                'en-US': 'English (US)',
+                                                'es-ES': 'Spanish (Spain)',
+                                                'es-US': 'Spanish (US)',
+                                                'et-EE': 'Estonian',
+                                                'eu-ES': 'Basque',
+                                                'fi-FI': 'Finnish',
+                                                'fil-PH': 'Filipino',
+                                                'fr-CA': 'French (Canada)',
+                                                'fr-FR': 'French',
+                                                'gl-ES': 'Galician',
+                                                'gu-IN': 'Gujarati',
+                                                'he-IL': 'Hebrew',
+                                                'hi-IN': 'Hindi',
+                                                'hu-HU': 'Hungarian',
+                                                'id-ID': 'Indonesian',
+                                                'is-IS': 'Icelandic',
+                                                'it-IT': 'Italian',
+                                                'ja-JP': 'Japanese',
+                                                'kn-IN': 'Kannada',
+                                                'ko-KR': 'Korean',
+                                                'lt-LT': 'Lithuanian',
+                                                'lv-LV': 'Latvian',
+                                                'ml-IN': 'Malayalam',
+                                                'mr-IN': 'Marathi',
+                                                'ms-MY': 'Malay',
+                                                'nb-NO': 'Norwegian',
+                                                'nl-BE': 'Dutch (Belgium)',
+                                                'nl-NL': 'Dutch',
+                                                'pa-IN': 'Punjabi',
+                                                'pl-PL': 'Polish',
+                                                'pt-BR': 'Portuguese (Brazil)',
+                                                'pt-PT': 'Portuguese',
+                                                'ro-RO': 'Romanian',
+                                                'ru-RU': 'Russian',
+                                                'sk-SK': 'Slovak',
+                                                'sr-RS': 'Serbian',
+                                                'sv-SE': 'Swedish',
+                                                'sw-KE': 'Swahili',
+                                                'ta-IN': 'Tamil',
+                                                'te-IN': 'Telugu',
+                                                'th-TH': 'Thai',
+                                                'tr-TR': 'Turkish',
+                                                'uk-UA': 'Ukrainian',
+                                                'ur-IN': 'Urdu',
+                                                'vi-VN': 'Vietnamese',
+                                                'yue-HK': 'Cantonese'
+                                            };
+                                            
+                                            return {
+                                                value: lang,
+                                                label: languageNames[lang] || lang
+                                            };
+                                        })}
+                                        value={selectedLanguage}
+                                        onChange={(value) => {
+                                            setSelectedLanguage(value || 'de-DE');
+                                            // Reset voice when language changes
+                                            const voicesForLanguage = config.googleVoices.filter(v => 
+                                                v.languageCodes.includes(value || 'de-DE')
+                                            );
+                                            if (voicesForLanguage.length > 0) {
+                                                setVoice(voicesForLanguage[0].name);
+                                            }
+                                        }}
+                                    />
+                                    <Select
+                                        label="Voice"
+                                        data={config.googleVoices
+                                            .filter(v => v.languageCodes.includes(selectedLanguage))
+                                            .map(v => ({
+                                                value: v.name,
+                                                label: `${v.name.replace(/[a-z]+-[a-zA-Z]+-/, '')} (${v.ssmlGender})`
+                                            }))}
+                                        value={voice}
+                                        onChange={(value) => setVoice(value || '')}
+                                    />
+                                </>
+                            ) : null}
                             {voiceType === 'none' ? null : (
                                 <>
-                                    <Textarea autosize minRows={1} maxRows={3} label="TTS Text" value={ttsText} onChange={(ev) => setTTSText(ev.target.value)}></Textarea>
+                                    <Group align="flex-start">
+                                        <Textarea 
+                                            style={{ flex: 1 }}
+                                            autosize 
+                                            minRows={1} 
+                                            maxRows={3} 
+                                            label="TTS Text" 
+                                            value={ttsText} 
+                                            onChange={(ev) => setTTSText(ev.target.value)}
+                                        />
+                                        <ActionIcon 
+                                            variant="filled" 
+                                            color="blue" 
+                                            size="lg" 
+                                            mt={24}
+                                            title="Preview TTS"
+                                            onClick={() => previewTTS(
+                                                ttsText,
+                                                voiceType,
+                                                voice,
+                                                appContext.alertConfig.meta.channel,
+                                                appContext.sink || ''
+                                            )}
+                                        >
+                                            <IconMusic size={18} />
+                                        </ActionIcon>
+                                    </Group>
                                     <Text fs="italic">{InfoText}</Text>
                                 </>
                             )}

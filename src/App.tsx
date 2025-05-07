@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { EventAlertConfig } from './components/types';
 import { hashObjectSHA256 } from './components/helper'
 import { HomePage } from './pages/Home.page'
-import { AITTSVoice } from './components/types'
+import { AITTSVoice, GoogleTTSVoice } from './components/types'
 import '@mantine/core/styles.css';
 
 function App() {
@@ -39,6 +39,10 @@ function App() {
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/ai/voices?token=' + token).then(res => res.json()).then((data: AITTSVoice[]) => {
             const voices = data.filter(v => v.category === 'cloned').map((v) => ({voice_id: v.voice_id, name: v.name, preview_url: v.preview_url, category: v.category}));
             setAppContext((context) => ({...context, aiVoices: voices}));
+        });
+
+        fetch(import.meta.env.VITE_BACKEND_URL + '/tts/voices?token=' + token).then(res => res.json()).then((data: {voices: GoogleTTSVoice[]}) => {
+            setAppContext((context) => ({...context, googleVoices: data.voices}));
         });
     }, []);
 

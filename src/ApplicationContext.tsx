@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { AITTSVoice, EventAlertConfig, NEW_ALERTCONFIG } from "./components/types";
+import { AITTSVoice, EventAlertConfig, GoogleTTSVoice, NEW_ALERTCONFIG } from "./components/types";
 
 export interface AppContextProps {
     alertConfig: EventAlertConfig
@@ -8,6 +8,7 @@ export interface AppContextProps {
     replayEvent: (event: any) => Promise<Response>;
     sink?: string;
     aiVoices: AITTSVoice[];
+    googleVoices: GoogleTTSVoice[];
 }
 
 export const DefaultAppContext: AppContextProps = {
@@ -15,6 +16,7 @@ export const DefaultAppContext: AppContextProps = {
     setAlertConfig: (alertConfig: EventAlertConfig) => {},
     uploadAlertConfig: () => Promise.resolve(),
     aiVoices: [],
+    googleVoices: [],
     replayEvent: () => Promise.resolve(new Response())
 };
 

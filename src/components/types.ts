@@ -139,6 +139,13 @@ export interface AITTSVoice {
   preview_url: string;
 }
 
+export interface GoogleTTSVoice {
+  languageCodes: string[];
+  name: string;
+  ssmlGender: string;
+  naturalSampleRateHertz: number;
+}
+
 export type Event = {
     id: number;
     channel: string; 
