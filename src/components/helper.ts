@@ -1,3 +1,5 @@
+import humanizeDuration from "humanize-duration"
+
 export function generateGUID(): string {
     return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
         (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
@@ -41,6 +43,45 @@ export function formatFileSize(bytes: number): string {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
+const shortEnglishHumanizer = humanizeDuration.humanizer({
+    language: "shortEn",
+    languages: {
+        shortEn: {
+            y: () => "y",
+            mo: () => "mo",
+            w: () => "w",
+            d: () => "d",
+            h: () => "h",
+            m: () => "m",
+            s: () => "s",
+            ms: () => "ms",
+        },
+    },
+});
+
+
+export const formatDuration = (duration: number) => {
+    return shortEnglishHumanizer(duration, { largest: 1 });
+}
+
+const formatFunctions: { [key: string]: (value: any) => string } = {
+    whole: (value: number) => Number(value).toFixed(0),
+    decimal: (value: number) => Number(value).toFixed(2),
+    uppercase: (value: string) => value.toUpperCase(),
+    lowercase: (value: string) => value.toLowerCase(),
+    duration: (value: string) => formatDuration(Number(value) * 1000),
+};
+
+export function formatString(messageTemplate: string, args: Record<string, any>): string {
+    return messageTemplate.replace(/\${(\w+)(?::(\w+))?}/g, (_, key, formatFunction) => {
+        const value = args[key];
+        if (formatFunction && formatFunctions[formatFunction]) {
+            return formatFunctions[formatFunction](value);
+        }
+        return String(value ?? '');
+    });
+}
+
 export async function previewTTS(
     text: string, 
     voiceType: 'ai' | 'google' | 'none', 
@@ -49,12 +90,16 @@ export async function previewTTS(
     sink: string
 ): Promise<void> {
     // Replace variables in the text
-    const previewText = text
-        .replace(/\${username}/g, "Peter453")
-        .replace(/\${usernameTo}/g, "HannaOG")
-        .replace(/\${amount}/g, "5")
-        .replace(/\${amount2}/g, "10")
-        .replace(/\${text}/g, "Sample message text");
+    const previewText = formatString(text, {
+        username: "Peter453",
+        usernameTo: "HannaOG",
+        amount: 5,
+        amount2: 10,
+        text: "Hallo"
+    });
+    
+    text
+
     
     // Determine endpoint based on voice type
     const endpoint = voiceType === 'ai' ? (import.meta.env.VITE_BACKEND_URL + '/tts/ai/generate') : (import.meta.env.VITE_BACKEND_URL + '/tts/generate');
