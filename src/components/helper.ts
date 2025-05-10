@@ -105,7 +105,7 @@ export async function previewTTS(
     const endpoint = voiceType === 'ai' ? (import.meta.env.VITE_BACKEND_URL + '/tts/ai/generate') : (import.meta.env.VITE_BACKEND_URL + '/tts/generate');
     
     // Construct URL with query parameters
-    const url = `${endpoint}?text=${encodeURIComponent(previewText)}&voice=${encodeURIComponent(voice)}&channel=${encodeURIComponent(channel)}&sink=${encodeURIComponent(sink || '')}`;
+    const url = `${endpoint}?text=${encodeURIComponent(previewText)}&voice=${encodeURIComponent(voice)}&channel=${encodeURIComponent(channel)}&preview=true&sink=${encodeURIComponent(sink || '')}`;
     
     try {
         // Fetch the audio file
