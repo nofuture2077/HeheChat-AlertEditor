@@ -33,7 +33,21 @@ function App() {
         });
 
         fetch(import.meta.env.VITE_BACKEND_URL + "/sink/get?token=" + token).then(res => res.json()).then(data => {
-            setAppContext((context) => ({...context, sink: data.sink}));
+            const sink = data.sink;
+            setAppContext((context) => ({...context, sink}));
+            
+            // Fetch premium status after sink is loaded
+            const premiumUrl = `${import.meta.env.VITE_BACKEND_URL}/premium/status?sink=${sink}`;
+                
+            fetch(premiumUrl)
+                .then(res => res.json())
+                .then((data: {premium: boolean}) => {
+                    setAppContext((context) => ({...context, isPremium: data.premium}));
+                })
+                .catch(error => {
+                    console.error('Failed to fetch premium status:', error);
+                    setAppContext((context) => ({...context, isPremium: false}));
+                });
         });
 
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/ai/voices?token=' + token).then(res => res.json()).then((data: AITTSVoice[]) => {
@@ -71,7 +85,7 @@ function App() {
     }
 
     return <MantineProvider defaultColorScheme="auto" theme={theme}>
-            <AppContext.Provider value={{...appContext, setAlertConfig, uploadAlertConfig, replayEvent}}>
+            <AppContext.Provider value={{...appContext, setAlertConfig, uploadAlertConfig, replayEvent, isPremium: appContext.isPremium}}>
                 <AlertEditor />
             </AppContext.Provider>
         </MantineProvider>;

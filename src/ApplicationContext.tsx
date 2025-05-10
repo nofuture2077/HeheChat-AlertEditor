@@ -9,6 +9,7 @@ export interface AppContextProps {
     sink?: string;
     aiVoices: AITTSVoice[];
     googleVoices: GoogleTTSVoice[];
+    isPremium: boolean;
 }
 
 export const DefaultAppContext: AppContextProps = {
@@ -17,7 +18,8 @@ export const DefaultAppContext: AppContextProps = {
     uploadAlertConfig: () => Promise.resolve(),
     aiVoices: [],
     googleVoices: [],
-    replayEvent: () => Promise.resolve(new Response())
+    replayEvent: () => Promise.resolve(new Response()),
+    isPremium: false
 };
 
 export const AppContext = createContext(DefaultAppContext);
