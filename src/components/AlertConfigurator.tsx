@@ -1,10 +1,10 @@
 import { useContext, ReactElement, useState, useMemo } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
-import { Base64File, EventAlert, EventMainType, EventTypeMapping } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy } from '@tabler/icons-react';
+import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS } from './helper';
 
@@ -396,6 +396,19 @@ export function AlertView(props: {
                     </Fieldset>
 
                 </SimpleGrid>
+                {/* Premium warning for non-Standard Google voices */}
+                {voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium && (
+                    <Alert 
+                        icon={<IconAlertCircle size={16} />} 
+                        title="Premium Required" 
+                        color="red" 
+                        variant="filled"
+                        mt="md"
+                    >
+                        You need a premium subscription to use non-Standard Google voices. Please upgrade or select a Standard voice.
+                    </Alert>
+                )}
+                
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
                     <Button 
@@ -407,11 +420,50 @@ export function AlertView(props: {
                     >
                         Copy Layout
                     </Button>
-                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, type, specifier: { type: specType, amount: nummberSpecType ? specAmount : undefined, text: nummberSpecType ? undefined : specText, attribute: nummberSpecType ? undefined : specAttribute }, restriction: 'none', visual: headline ? {headline, text, position: position.join(' '), layout: layout.join(' '), element: image?.id || undefined} : undefined, audio: { jingle: jingle?.id || undefined, tts: (ttsText && voiceType !== 'none') ? { text: ttsText, voiceType, voiceSpecifier: voice, voiceParams: {} } : undefined } })}>Create Alert</Button>
+                    <Button 
+                        variant="filled" 
+                        color="pink" 
+                        disabled={(voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium) || false}
+                        onClick={() => {
+                            // Create the alert object
+                            const alertData = { 
+                                id, 
+                                name, 
+                                type, 
+                                specifier: { 
+                                    type: specType, 
+                                    amount: nummberSpecType ? specAmount : undefined, 
+                                    text: nummberSpecType ? undefined : specText, 
+                                    attribute: nummberSpecType ? undefined : specAttribute 
+                                }, 
+                                restriction: 'none' as EventAlertRestriction, 
+                                visual: headline ? {
+                                    headline, 
+                                    text, 
+                                    position: position.join(' '), 
+                                    layout: layout.join(' '), 
+                                    element: image?.id || undefined
+                                } : undefined, 
+                                audio: { 
+                                    jingle: jingle?.id || undefined, 
+                                    tts: (ttsText && voiceType !== 'none') ? { 
+                                        text: ttsText, 
+                                        voiceType, 
+                                        voiceSpecifier: voice, 
+                                        voiceParams: {} 
+                                    } : undefined 
+                                } 
+                            };
+                            
+                            props.confirm(alertData);
+                        }}
+                    >
+                        Create Alert
+                    </Button>
                 </Group>
                 {showCopyModal && (
                     <CopyLayoutModal
-                        sourceAlert={{ id, name, type, specifier: { type: specType }, restriction: 'none' }}
+                        sourceAlert={{ id, name, type, specifier: { type: specType }, restriction: 'none' as EventAlertRestriction }}
                         alerts={appContext.alertConfig.data?.alerts || {
                             sub: [],
                             subgift: [],
