@@ -463,7 +463,8 @@ async function convertStreamElementsConfig(seConfig: any): Promise<EventAlertCon
         follow: [],
         donation: [],
         cheer: [],
-        channelPointRedemption: []
+        channelPointRedemption: [],
+        kofi: []
     };
 
     // Process all alert box widgets
