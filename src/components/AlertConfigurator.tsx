@@ -4,7 +4,7 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS } from './helper';
 
@@ -19,7 +19,8 @@ const icons: Record<EventMainType, ReactElement> = {
     'follow': <IconUserHeart />,
     'cheer': <IconCoinBitcoinFilled />,
     'donation': <IconMoneybag />,
-    'channelPointRedemption':  <IconPlant/>
+    'channelPointRedemption':  <IconPlant/>,
+    'kofi':  <IconAffiliate/>,
 }
 
 const fileTypeIcon: Record<string, ReactElement> = {
@@ -37,7 +38,8 @@ const alertTypes: Record<string, string> = {
     "follow": "Follows",
     "donation": "Donations",
     "cheer": "Bit-Donations",
-    "channelPointRedemption": "Channel Points"
+    "channelPointRedemption": "Channel Points",
+    "kofi": "Ko-Fi Integration"
 };
 
 const AVAILABLE_CLASSES = {
@@ -472,7 +474,8 @@ export function AlertView(props: {
                             follow: [],
                             donation: [],
                             cheer: [],
-                            channelPointRedemption: []
+                            channelPointRedemption: [],
+                            kofi: []
                         }}
                         onClose={() => setShowCopyModal(false)}
                         onCopy={handleCopyLayout}
@@ -594,9 +597,9 @@ export function AlertConfigurator(props: NavigationProps) {
         addAlertView(alert.type as EventMainType, 'Edit Alert: ' + clonedAlert.name, addAlert, clonedAlert);
     };
 
-    const alertNodes = <>{Object.keys(appContext.alertConfig.data?.alerts || {}).map((ev) => {
+    const alertNodes = <>{Object.keys(alertTypes).map((ev) => {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
-            {appContext.alertConfig.data!.alerts[ev as EventMainType].map((alert: EventAlert) => <NavLink leftSection={<ActionIcon variant='transparent' onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)}>{icons[ev as EventMainType]}</ActionIcon>} rightSection={<Group gap={0}><ActionIcon variant='subtle' onClick={() => cloneAlert(alert)}><IconPlus /></ActionIcon><ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon></Group>} key={alert.id} label={alert.name} />)}
+            {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => <NavLink leftSection={<ActionIcon variant='transparent' onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)}>{icons[ev as EventMainType]}</ActionIcon>} rightSection={<Group gap={0}><ActionIcon variant='subtle' onClick={() => cloneAlert(alert)}><IconPlus /></ActionIcon><ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon></Group>} key={alert.id} label={alert.name} />)}
             <NavLink leftSection={<IconPlus />} label="Add New" key={ev + "-new"} onClick={() => addAlertView(ev as EventMainType, 'Add Alert: ' + alertTypes[ev], addAlert)}></NavLink>
         </NavLink>
     })}</>;
