@@ -51,7 +51,7 @@ function App() {
         });
 
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/ai/voices?token=' + token).then(res => res.json()).then((data: AITTSVoice[]) => {
-            const voices = data.filter(v => v.category === 'cloned').map((v) => ({voice_id: v.voice_id, name: v.name, preview_url: v.preview_url, category: v.category}));
+            const voices = data.map((v) => ({voice_id: v.voice_id, name: v.name, preview_url: v.preview_url, category: v.category}));
             setAppContext((context) => ({...context, aiVoices: voices}));
         });
 
