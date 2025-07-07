@@ -6,6 +6,7 @@ import { EventAlertConfig } from './components/types';
 import { hashObjectSHA256 } from './components/helper'
 import { HomePage } from './pages/Home.page'
 import { AITTSVoice, GoogleTTSVoice } from './components/types'
+import '@mantine/core/styles/global.css';
 import '@mantine/core/styles.css';
 
 function App() {
