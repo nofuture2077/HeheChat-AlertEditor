@@ -55,7 +55,7 @@ const AlertEditor = () => {
     >
       <AppShell.Header p={10} pl={30}>
         <Group justify='space-between'>
-          <Group>
+          <Group justify='flex-start'>
             <Image src={logo} h={32}/>
             <Text fw={700} size="18px">HEHE CHAT - Editor</Text>
           </Group>
