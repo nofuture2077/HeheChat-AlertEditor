@@ -1,10 +1,10 @@
 import { useContext, useState } from 'react';
-import { AppShell, Image, Group, Text, Button, ActionIcon } from '@mantine/core';
-import logo from '../pages/logo.svg'
+import { AppShell, Image, Group, Text, ActionIcon } from '@mantine/core';
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
 import { IconUpload, IconPlayerPlay, IconBrowser, IconBrowserCheck, IconDownload, IconFileImport } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
+import { HeaderLogo } from './HeaderLogo';
 
 const AlertEditor = () => {
   const appContext = useContext(AppContext);
@@ -56,7 +56,7 @@ const AlertEditor = () => {
       <AppShell.Header p={10} pl={30}>
         <Group justify='space-between'>
           <Group justify='flex-start'>
-            <Image src={logo} h={32}/>
+            <HeaderLogo height={28}/>
             <Text fw={700} size="18px">HEHE CHAT - Editor</Text>
           </Group>
           <Group>
