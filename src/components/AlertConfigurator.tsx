@@ -4,7 +4,7 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS } from './helper';
 
@@ -21,6 +21,7 @@ const icons: Record<EventMainType, ReactElement> = {
     'donation': <IconMoneybag />,
     'channelPointRedemption':  <IconPlant/>,
     'kofi':  <IconAffiliate/>,
+    'hypetrain':  <IconTrain/>,
 }
 
 const fileTypeIcon: Record<string, ReactElement> = {
@@ -39,7 +40,8 @@ const alertTypes: Record<string, string> = {
     "donation": "Donations",
     "cheer": "Bit-Donations",
     "channelPointRedemption": "Channel Points",
-    "kofi": "Ko-Fi Integration"
+    "kofi": "Ko-Fi Integration",
+    "hypetrain": "Hypetrain"
 };
 
 const AVAILABLE_CLASSES = {
@@ -478,7 +480,8 @@ export function AlertView(props: {
                             donation: [],
                             cheer: [],
                             channelPointRedemption: [],
-                            kofi: []
+                            kofi: [],
+                            hypetrain: []
                         }}
                         onClose={() => setShowCopyModal(false)}
                         onCopy={handleCopyLayout}

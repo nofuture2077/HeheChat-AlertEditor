@@ -4,9 +4,9 @@ import _ from "underscore";
 export type EventType = 'raid' | 'follow' | 'cheer'| 'donation' |
 'sub_1000' | 'sub_2000' | 'sub_3000' | 'sub_Prime' | 
 'subgift_1000' | 'subgift_2000' | 'subgift_3000' | 
-'subgiftb_1000' | 'subgiftb_2000' | 'subgiftb_3000' | 'channelPointRedemption' | 'kofisub' | 'kofidono' | 'kofishop';
+'subgiftb_1000' | 'subgiftb_2000' | 'subgiftb_3000' | 'channelPointRedemption' | 'kofisub' | 'kofidono' | 'kofishop' | 'hypetrain';
 
-export type EventMainType = 'sub' | 'subgift' | 'subgiftb' | 'raid' | 'follow' | 'donation' | 'cheer' | 'channelPointRedemption' | 'kofi';
+export type EventMainType = 'sub' | 'subgift' | 'subgiftb' | 'raid' | 'follow' | 'donation' | 'cheer' | 'channelPointRedemption' | 'kofi' | 'hypetrain';
 
 export type EventAlertRestriction = 'none' | 'mod' | 'system';
 
@@ -32,7 +32,8 @@ export const EventTypeMapping: Record<EventType | EventMainType, EventMainType> 
   'kofisub': 'kofi',
   'kofidono': 'kofi',
   'kofishop': 'kofi',
-  'kofi': 'kofi'
+  'kofi': 'kofi',
+  'hypetrain': 'hypetrain'
 };
 
 
@@ -131,7 +132,8 @@ export const NEW_ALERTCONFIG: EventAlertConfig = {
             "raid": [],
             "follow": [],
             "channelPointRedemption": [],
-            "kofi": []
+            "kofi": [],
+            "hypetrain": []
         },
         files: {}
     }
