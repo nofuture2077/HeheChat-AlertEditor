@@ -8,7 +8,7 @@ export default defineConfig({
   esbuild: {
     target: 'es2022'
   },
-  base: process.env.VITE_SLUG || '/',
+  base: '#{import.meta.env.VITE_SLUG}',
   test: {
     globals: true,
     environment: 'jsdom',

@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { AppShell, Image, Group, Text, Button, ActionIcon } from '@mantine/core';
-import logo from '../logo.svg'
+import logo from '../pages/logo.svg'
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
 import { IconUpload, IconPlayerPlay, IconBrowser, IconBrowserCheck, IconDownload, IconFileImport } from '@tabler/icons-react'
