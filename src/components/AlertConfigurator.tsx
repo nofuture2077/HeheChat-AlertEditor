@@ -48,7 +48,7 @@ const AVAILABLE_CLASSES = {
     position: {
         alignment: ['align-left', 'align-center', 'align-right'],
         imageSizes: ['image-xs', 'image-sm', 'image-md', 'image-lg', 'image-xl'],
-        imagePosition: ['image-fixed-bottom', 'image-fixed-left', 'image-fixed-right'],
+        imagePosition: ['image-fixed-bottom', 'image-fixed-left', 'image-fixed-right', 'text-over-image'],
         headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl'],
         textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'],
         vertical: ['top', 'middle', 'bottom'],
