@@ -55,6 +55,9 @@ export type EventAlertMeta = {
 export type EventAlertData = {
     alerts: Record<EventMainType, EventAlert[]>;
     files: Record<Base64FileReference, Base64File>;
+    config?: {
+        ttsReplacements?: Record<string, string>;
+    }
 }
 
 export type EventAlert = {

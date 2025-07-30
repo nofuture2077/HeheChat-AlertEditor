@@ -4,9 +4,10 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS } from './helper';
+import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 
 export interface NavigationProps {
 }
@@ -531,8 +532,46 @@ export function AlertConfigurator(props: NavigationProps) {
     const appContext = useContext<AppContextProps>(AppContext);
     const [confirmDeleteOpen, confirmDeleteHandler] = useDisclosure(false);
     const [confirmDeleteComponent, setConfirmDeleteComponent] = useState<ReactElement | undefined>(undefined);
+    const [ttsReplacementsOpened, setTtsReplacementsOpened] = useState(false);
+
+    // Ensure config structure is initialized
+    const ensureConfigStructure = () => {
+        const config = { ...appContext.alertConfig };
+        
+        if (!config.data) {
+            config.data = {
+                alerts: {
+                    sub: [],
+                    subgift: [],
+                    subgiftb: [],
+                    raid: [],
+                    follow: [],
+                    donation: [],
+                    cheer: [],
+                    channelPointRedemption: [],
+                    kofi: [],
+                    hypetrain: []
+                },
+                files: {}
+            };
+        }
+        
+        if (!config.data.config) {
+            config.data.config = {};
+        }
+        
+        if (!config.data.config.ttsReplacements) {
+            config.data.config.ttsReplacements = {};
+        }
+        
+        // Only update if something was missing
+        if (!appContext.alertConfig.data?.config?.ttsReplacements) {
+            appContext.setAlertConfig(config);
+        }
+    };
 
     const setName = function (name: string) {
+        ensureConfigStructure();
         appContext.alertConfig.meta.name = name;
         appContext.setAlertConfig(appContext.alertConfig);
     }
@@ -675,6 +714,10 @@ export function AlertConfigurator(props: NavigationProps) {
             onRename={handleFileRename}
             file={previewFile}
         />
+        <TTSReplacementsEditor
+            opened={ttsReplacementsOpened}
+            onClose={() => setTtsReplacementsOpened(false)}
+        />
         {confirmDeleteOpen ? confirmDeleteComponent : null}
         <Text>Meta-Information</Text>
         <TextInput label="Channel" value={appContext.alertConfig.meta.channel} readOnly disabled />
@@ -682,6 +725,17 @@ export function AlertConfigurator(props: NavigationProps) {
         <TextInput label="GUID" value={appContext.alertConfig.meta.guid} readOnly disabled />
         <TextInput label="Hash" value={appContext.alertConfig.meta.hash} readOnly disabled />
         <TextInput label="Last Update" value={appContext.alertConfig.meta.lastUpdate} readOnly disabled />
+        <Space h="xl" />
+        <Text>TTS Configuration</Text>
+        <NavLink 
+            label="TTS Text Replacements" 
+            leftSection={<IconSettings />}
+            onClick={() => {
+                ensureConfigStructure();
+                setTtsReplacementsOpened(true);
+            }}
+            description={`${Object.keys(appContext.alertConfig.data?.config?.ttsReplacements || {}).length} replacement rules configured`}
+        />
         <Space h="xl" />
         <Text>Alerts</Text>
         {alertNodes}
