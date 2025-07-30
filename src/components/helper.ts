@@ -84,11 +84,31 @@ export function formatString(messageTemplate: string, args: Record<string, any>)
 
 export async function previewTTS(
     text: string, 
-    voiceType: 'ai' | 'google' | 'none', 
+    voiceType: 'ai' | 'google' | 'none' | 'default', 
     voice: string, 
     channel: string, 
-    sink: string
+    sink: string,
+    defaultVoice?: { voiceType: 'ai' | 'google'; voiceSpecifier: string; voiceParams: Record<string, string | number> }
 ): Promise<void> {
+    // Handle default voice type
+    let actualVoiceType = voiceType;
+    let actualVoice = voice;
+    
+    if (voiceType === 'default') {
+        if (!defaultVoice) {
+            console.error('Default voice type selected but no default voice configuration provided');
+            alert('No default voice configured. Please configure a default voice first.');
+            return;
+        }
+        actualVoiceType = defaultVoice.voiceType;
+        actualVoice = defaultVoice.voiceSpecifier;
+    }
+    
+    if (actualVoiceType === 'none') {
+        console.log('TTS is disabled (voice type: none)');
+        return;
+    }
+    
     // Replace variables in the text
     const previewText = formatString(text, {
         username: "Peter453",
@@ -98,14 +118,11 @@ export async function previewTTS(
         text: "Hallo"
     });
     
-    text
-
-    
     // Determine endpoint based on voice type
-    const endpoint = voiceType === 'ai' ? (import.meta.env.VITE_BACKEND_URL + '/tts/ai/generate') : (import.meta.env.VITE_BACKEND_URL + '/tts/generate');
+    const endpoint = actualVoiceType === 'ai' ? (import.meta.env.VITE_BACKEND_URL + '/tts/ai/generate') : (import.meta.env.VITE_BACKEND_URL + '/tts/generate');
     
     // Construct URL with query parameters
-    const url = `${endpoint}?text=${encodeURIComponent(previewText)}&voice=${encodeURIComponent(voice)}&channel=${encodeURIComponent(channel)}&preview=true&sink=${encodeURIComponent(sink || '')}`;
+    const url = `${endpoint}?text=${encodeURIComponent(previewText)}&voice=${encodeURIComponent(actualVoice)}&channel=${encodeURIComponent(channel)}&preview=true&sink=${encodeURIComponent(sink || '')}`;
     
     try {
         // Fetch the audio file

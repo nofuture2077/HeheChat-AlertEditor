@@ -57,6 +57,11 @@ export type EventAlertData = {
     files: Record<Base64FileReference, Base64File>;
     config?: {
         ttsReplacements?: Record<string, string>;
+        defaultVoice?: {
+            voiceType: 'ai' | 'google';
+            voiceSpecifier: string;
+            voiceParams: Record<string, string | number>;
+        };
     }
 }
 
@@ -77,7 +82,7 @@ export type EventAlertAudioData = {
 
 export type EventAlertTTS = {
     text?: string;
-    voiceType: 'ai' | 'google' | 'none';
+    voiceType: 'ai' | 'google' | 'none' | 'default';
     voiceSpecifier: string;
     voiceParams: Record<string, string | number>;
 }
@@ -138,7 +143,10 @@ export const NEW_ALERTCONFIG: EventAlertConfig = {
             "kofi": [],
             "hypetrain": []
         },
-        files: {}
+        files: {},
+        config: {
+            ttsReplacements: {}
+        }
     }
 }
 

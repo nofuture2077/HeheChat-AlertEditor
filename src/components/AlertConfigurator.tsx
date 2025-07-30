@@ -8,6 +8,7 @@ import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUs
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS } from './helper';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
+import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 
 export interface NavigationProps {
 }
@@ -150,7 +151,7 @@ export function AlertView(props: {
 
     const [jingle, setJingle] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.audio?.jingle) && x.id)?.name || 'id', id: (props.data?.audio?.jingle || "") });
     const [image, setImage] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.visual?.element) && x.id)?.name || 'id', id: (props.data?.visual?.element || "") });
-    const [voiceType, setVoiceType] = useState<'ai' | 'google' | 'none'>(props.data?.audio?.tts?.voiceType || 'none');
+    const [voiceType, setVoiceType] = useState<'ai' | 'google' | 'none' | 'default'>(props.data?.audio?.tts?.voiceType || 'default');
     const [showCopyModal, setShowCopyModal] = useState(false);
     const appContext = useContext<AppContextProps>(AppContext);
 
@@ -200,7 +201,7 @@ export function AlertView(props: {
     const nummberSpecType = specType === 'min' || specType === 'exact';
 
     const InfoText = "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
-    const voiceTypes = config.aiVoices.length ? ['ai', 'google', 'none'] : ['google', 'none'];
+    const voiceTypes = config.aiVoices.length ? ['default', 'ai', 'google', 'none'] : ['default', 'google', 'none'];
     return (
         <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false} size='xl'>
             <Stack gap="sm">
@@ -391,7 +392,8 @@ export function AlertView(props: {
                                                 voiceType,
                                                 voice,
                                                 appContext.alertConfig.meta.channel,
-                                                appContext.sink || ''
+                                                appContext.sink || '',
+                                                appContext.alertConfig.data?.config?.defaultVoice
                                             )}
                                         >
                                             <IconMusic size={18} />
@@ -533,6 +535,7 @@ export function AlertConfigurator(props: NavigationProps) {
     const [confirmDeleteOpen, confirmDeleteHandler] = useDisclosure(false);
     const [confirmDeleteComponent, setConfirmDeleteComponent] = useState<ReactElement | undefined>(undefined);
     const [ttsReplacementsOpened, setTtsReplacementsOpened] = useState(false);
+    const [defaultVoiceOpened, setDefaultVoiceOpened] = useState(false);
 
     // Ensure config structure is initialized
     const ensureConfigStructure = () => {
@@ -718,6 +721,10 @@ export function AlertConfigurator(props: NavigationProps) {
             opened={ttsReplacementsOpened}
             onClose={() => setTtsReplacementsOpened(false)}
         />
+        <DefaultVoiceEditor
+            opened={defaultVoiceOpened}
+            onClose={() => setDefaultVoiceOpened(false)}
+        />
         {confirmDeleteOpen ? confirmDeleteComponent : null}
         <Text>Meta-Information</Text>
         <TextInput label="Channel" value={appContext.alertConfig.meta.channel} readOnly disabled />
@@ -735,6 +742,19 @@ export function AlertConfigurator(props: NavigationProps) {
                 setTtsReplacementsOpened(true);
             }}
             description={`${Object.keys(appContext.alertConfig.data?.config?.ttsReplacements || {}).length} replacement rules configured`}
+        />
+        <NavLink 
+            label="Default Voice" 
+            leftSection={<IconMusic />}
+            onClick={() => {
+                ensureConfigStructure();
+                setDefaultVoiceOpened(true);
+            }}
+            description={
+                appContext.alertConfig.data?.config?.defaultVoice 
+                    ? `${appContext.alertConfig.data.config.defaultVoice.voiceType.toUpperCase()}: ${appContext.alertConfig.data.config.defaultVoice.voiceSpecifier}`
+                    : "No default voice configured"
+            }
         />
         <Space h="xl" />
         <Text>Alerts</Text>
