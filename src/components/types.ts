@@ -181,8 +181,14 @@ export function getAlert(event: Event, eventData: any, alertConfig: EventAlertCo
     if (event.eventAlert) {
         return event.eventAlert;
     }
+    
+    // Check if alertConfig is defined
+    if (!alertConfig || !alertConfig.data) {
+        return undefined;
+    }
+    
     const eventMainType = EventTypeMapping[event.eventtype] as EventMainType;
-    const alerts = alertConfig.data?.alerts[eventMainType];
+    const alerts = alertConfig.data.alerts[eventMainType];
     if (!alerts) {
         return undefined;
     }

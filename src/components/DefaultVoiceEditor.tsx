@@ -93,12 +93,15 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
     };
 
     const handlePreviewTTS = () => {
+        // When previewing the default voice in the editor, we pass the current editor state directly
+        // We don't use "default" voice type here since we want to preview the actual voice being configured
         previewTTS(
             'This is a preview of the default voice.',
             voiceType,
             voice,
             appContext.alertConfig.meta.channel,
-            appContext.sink || ''
+            appContext.sink || '',
+            undefined // No need to pass defaultVoice since we're previewing the voice directly
         );
     };
 
