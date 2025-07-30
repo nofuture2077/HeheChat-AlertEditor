@@ -22,47 +22,46 @@ interface TTSReplacementsEditorProps {
 
 export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditorProps) {
     const appContext = useContext(AppContext);
-    const [replacements, setReplacements] = useState<Record<string, string>>(
-        appContext.alertConfig.data?.config?.ttsReplacements || {}
-    );
+    
+    // Use an array to maintain order and stable keys
+    const [replacements, setReplacements] = useState<Array<{ id: string; key: string; value: string }>>(() => {
+        const ttsReplacements = appContext.alertConfig.data?.config?.ttsReplacements || {};
+        return Object.entries(ttsReplacements).map(([key, value], index) => ({
+            id: `replacement-${index}-${Date.now()}`,
+            key,
+            value
+        }));
+    });
 
     const handleAddReplacement = () => {
-        const newKey = `replacement_${Object.keys(replacements).length + 1}`;
-        setReplacements(prev => ({
-            ...prev,
-            [newKey]: ''
-        }));
+        const newReplacement = {
+            id: `replacement-${Date.now()}-${Math.random()}`,
+            key: `replacement_${replacements.length + 1}`,
+            value: ''
+        };
+        setReplacements(prev => [...prev, newReplacement]);
     };
 
-    const handleRemoveReplacement = (key: string) => {
-        setReplacements(prev => {
-            const newReplacements = { ...prev };
-            delete newReplacements[key];
-            return newReplacements;
-        });
+    const handleRemoveReplacement = (id: string) => {
+        setReplacements(prev => prev.filter(item => item.id !== id));
     };
 
-    const handleKeyChange = (oldKey: string, newKey: string) => {
-        if (oldKey === newKey) return;
-        
-        // Check if new key already exists
-        if (replacements[newKey] !== undefined) {
+    const handleKeyChange = (id: string, newKey: string) => {
+        // Check if new key already exists (excluding current item)
+        const keyExists = replacements.some(item => item.id !== id && item.key === newKey);
+        if (keyExists) {
             return; // Don't allow duplicate keys
         }
 
-        setReplacements(prev => {
-            const newReplacements = { ...prev };
-            newReplacements[newKey] = newReplacements[oldKey];
-            delete newReplacements[oldKey];
-            return newReplacements;
-        });
+        setReplacements(prev => prev.map(item => 
+            item.id === id ? { ...item, key: newKey } : item
+        ));
     };
 
-    const handleValueChange = (key: string, value: string) => {
-        setReplacements(prev => ({
-            ...prev,
-            [key]: value
-        }));
+    const handleValueChange = (id: string, value: string) => {
+        setReplacements(prev => prev.map(item => 
+            item.id === id ? { ...item, value } : item
+        ));
     };
 
     const handleSave = () => {
@@ -78,9 +77,11 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
             config.data.config = {};
         }
 
-        // Filter out empty replacements
+        // Convert array back to Record and filter out empty replacements
         const filteredReplacements = Object.fromEntries(
-            Object.entries(replacements).filter(([key, value]) => key.trim() !== '' && value.trim() !== '')
+            replacements
+                .filter(item => item.key.trim() !== '' && item.value.trim() !== '')
+                .map(item => [item.key, item.value])
         );
 
         config.data.config.ttsReplacements = filteredReplacements;
@@ -90,7 +91,12 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
 
     const handleCancel = () => {
         // Reset to original state
-        setReplacements(appContext.alertConfig.data?.config?.ttsReplacements || {});
+        const ttsReplacements = appContext.alertConfig.data?.config?.ttsReplacements || {};
+        setReplacements(Object.entries(ttsReplacements).map(([key, value], index) => ({
+            id: `replacement-${index}-${Date.now()}`,
+            key,
+            value
+        })));
         onClose();
     };
 
@@ -103,29 +109,15 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
             scrollAreaComponent={ScrollArea.Autosize}
         >
             <Stack gap="md">
-                <Alert 
-                    icon={<IconInfoCircle size={16} />} 
-                    title="How TTS Replacements Work" 
-                    color="blue"
-                    variant="light"
-                >
-                    <Text size="sm">
-                        • <strong>Word-based replacement:</strong> Only complete words are replaced, not partial matches<br/>
-                        • <strong>Case-insensitive:</strong> "Hello" will match "hello", "HELLO", "Hello", etc.<br/>
-                        • <strong>Wildcard support:</strong> Use * for patterns like "bad*" to match "badword", "badthing", etc.<br/>
-                        • <strong>Processing order:</strong> Replacements are applied before TTS generation
-                    </Text>
-                </Alert>
-
                 <Fieldset legend="Replacement Rules">
                     <Stack gap="sm">
-                        {Object.entries(replacements).map(([key, value], index) => (
-                            <Group key={`${key}-${index}`} align="flex-end" gap="sm">
+                        {replacements.map((item, index) => (
+                            <Group key={item.id} align="flex-end" gap="sm">
                                 <TextInput
                                     label={index === 0 ? "Find (supports wildcards *)" : undefined}
                                     placeholder="Enter text to replace..."
-                                    value={key}
-                                    onChange={(e) => handleKeyChange(key, e.target.value)}
+                                    value={item.key}
+                                    onChange={(e) => handleKeyChange(item.id, e.target.value)}
                                     style={{ flex: 1 }}
                                 />
                                 <Text size="sm" c="dimmed" style={{ padding: '0 8px', alignSelf: 'center' }}>
@@ -134,14 +126,14 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
                                 <TextInput
                                     label={index === 0 ? "Replace with" : undefined}
                                     placeholder="Enter replacement text..."
-                                    value={value}
-                                    onChange={(e) => handleValueChange(key, e.target.value)}
+                                    value={item.value}
+                                    onChange={(e) => handleValueChange(item.id, e.target.value)}
                                     style={{ flex: 1 }}
                                 />
                                 <ActionIcon
                                     variant="subtle"
                                     color="red"
-                                    onClick={() => handleRemoveReplacement(key)}
+                                    onClick={() => handleRemoveReplacement(item.id)}
                                     style={{ alignSelf: index === 0 ? 'flex-end' : 'center' }}
                                 >
                                     <IconTrash size={16} />
@@ -149,7 +141,7 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
                             </Group>
                         ))}
                         
-                        {Object.keys(replacements).length === 0 && (
+                        {replacements.length === 0 && (
                             <Text c="dimmed" ta="center" py="xl">
                                 No replacement rules configured. Click "Add Replacement" to get started.
                             </Text>
@@ -167,7 +159,7 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
                     </Button>
                 </Group>
 
-                {Object.keys(replacements).length > 0 && (
+                {replacements.length > 0 && (
                     <>
                         <Divider />
                         <Alert 
