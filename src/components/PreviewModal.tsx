@@ -20,7 +20,23 @@ export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }
   const [text, setText] = useState('Test message');
   const [rewardTitle, setRewardTitle] = useState('TTS');
 
-  const mainTypes: EventMainType[] = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption'];
+  const alertTypes: Record<string, string> = {
+    'sub': 'Subscriptions',
+    'subgift': "Gift-Subs",
+    "subgiftb": "Received Gift Subs",
+    "raid": "Raids",
+    "follow": "Follows",
+    "donation": "Donations",
+    "cheer": "Bit-Donations",
+    "channelPointRedemption": "Channel Points",
+    "kofi": "Ko-Fi Integration",
+    "hypetrain": "Hypetrain"
+  };
+
+  const mainTypes = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'hypetrain'].map(type => ({
+    value: type,
+    label: alertTypes[type]
+  }));
   
   const getEventTypes = (mainType: EventMainType): EventType[] => {
     return Object.entries(EventTypeMapping)

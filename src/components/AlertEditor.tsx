@@ -1,8 +1,8 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AppShell, Image, Group, Text, ActionIcon } from '@mantine/core';
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
-import { IconUpload, IconPlayerPlay, IconBrowser, IconBrowserCheck, IconDownload, IconFileImport } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport, IconPlayerPlay } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
 
@@ -10,6 +10,39 @@ const AlertEditor = () => {
   const appContext = useContext(AppContext);
   const [save, setSave] = useState(false);
   const [previewOpened, setPreviewOpened] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [savedConfigHash, setSavedConfigHash] = useState<string>('');
+
+  // Track unsaved changes by comparing current hash with last saved hash
+  useEffect(() => {
+    // Initialize saved hash when config is first loaded
+    if (appContext.alertConfig.meta.hash && savedConfigHash === '') {
+      setSavedConfigHash(appContext.alertConfig.meta.hash);
+      setHasUnsavedChanges(false);
+    }
+    // Check if current config differs from saved config
+    else if (savedConfigHash && appContext.alertConfig.meta.hash !== savedConfigHash) {
+      setHasUnsavedChanges(true);
+    }
+    // If hashes match, no unsaved changes
+    else if (savedConfigHash && appContext.alertConfig.meta.hash === savedConfigHash) {
+      setHasUnsavedChanges(false);
+    }
+  }, [appContext.alertConfig.meta.hash, savedConfigHash]);
+
+  // Warning when leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return 'You have unsaved changes. Are you sure you want to leave?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const handleExport = () => {
     const config = appContext.alertConfig;
@@ -57,48 +90,57 @@ const AlertEditor = () => {
         <Group justify='space-between'>
           <Group justify='flex-start'>
             <HeaderLogo height={28}/>
-            <Text fw={700} size="18px">HEHE CHAT - Editor</Text>
+            <Text fw={700} size="18px">HEHEChat - Editor</Text>
           </Group>
           <Group>
-            { appContext.sink ? (
-              <>
               <ActionIcon 
               variant="light" 
+              color="blue"
               onClick={() => {
                 setPreviewOpened(true);
               }}
+              title="Preview Alert"
             ><IconPlayerPlay /></ActionIcon>
             <ActionIcon 
               variant="light" 
+              color="blue"
               onClick={() => {
                 window.open(import.meta.env.VITE_SINK_URL + "#token=" + appContext.sink + "&preview=true", '_blank');
               }}
-            ><IconBrowserCheck /></ActionIcon>
-            </>
-            ) : <><span></span><span></span></>}
-            
+              title="Preview in Browser"
+            ><IconEye /></ActionIcon>
+                        
             <ActionIcon 
               variant="light"
+              color="green"
               onClick={handleExport}
               title="Export Alert Config"
             >
-              <IconDownload/>
+              <IconPackageExport/>
             </ActionIcon>
             <ActionIcon 
               variant="light"
+              color="orange"
               onClick={handleImport}
               title="Import Alert Config"
             >
-              <IconFileImport/>
+              <IconPackageImport/>
             </ActionIcon>
             <ActionIcon 
               variant="light"
+              color={hasUnsavedChanges ? "red" : "gray"}
               {...bProps}
-              onClick={() => {setSave(true);appContext.uploadAlertConfig().then(() => {
-                setSave(false);
-              })}}
+              onClick={() => {
+                setSave(true);
+                appContext.uploadAlertConfig().then(() => {
+                  setSave(false);
+                  setSavedConfigHash(appContext.alertConfig.meta.hash);
+                  setHasUnsavedChanges(false);
+                });
+              }}
+              title="Save Alert Config"
             >
-              <IconUpload/>
+              <IconDeviceFloppy/>
             </ActionIcon>
           </Group>
           </Group>
