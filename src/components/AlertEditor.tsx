@@ -90,7 +90,7 @@ const AlertEditor = () => {
         <Group justify='space-between'>
           <Group justify='flex-start'>
             <HeaderLogo height={28}/>
-            <Text fw={700} size="18px">HEHEChat - Editor</Text>
+            <Text fw={700} size="18px">Editor</Text>
           </Group>
           <Group>
               <ActionIcon 
