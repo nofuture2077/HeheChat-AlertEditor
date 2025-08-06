@@ -71,6 +71,7 @@ export type EventAlert = {
     type: EventType | EventMainType;
     specifier: EventAlertSpecifier;
     restriction: EventAlertRestriction;
+    minDuration?: number;
     audio?: EventAlertAudioData;
     visual?: EventAlertVisualData;
 }

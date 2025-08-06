@@ -148,6 +148,7 @@ export function AlertView(props: {
     const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
     const [specText, setSpecText] = useState<string>(props.data?.specifier.text || '');
     const [specAttribute, setSpecAttribute] = useState<string | undefined>(props.data?.specifier.attribute || '');
+    const [minDuration, setMinDuration] = useState<number>(props.data?.minDuration || 0);
 
     const [jingle, setJingle] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.audio?.jingle) && x.id)?.name || 'id', id: (props.data?.audio?.jingle || "") });
     const [image, setImage] = useState<{ name: string, id: string }>({ name: props.fileRefs.find(x => (x.id === props.data?.visual?.element) && x.id)?.name || 'id', id: (props.data?.visual?.element || "") });
@@ -228,6 +229,15 @@ export function AlertView(props: {
                             <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
                             <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
                             <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
+                            <NumberInput 
+                                label="Min Duration (seconds)" 
+                                description="Minimum display duration for this alert"
+                                value={minDuration} 
+                                onChange={(val) => setMinDuration(Number(val))} 
+                                min={0}
+                                step={0.1}
+                                decimalScale={1}
+                            />
                             <MultiSelect
                                 label="Style"
                                 value={layout}
@@ -446,7 +456,8 @@ export function AlertView(props: {
                                     text: nummberSpecType ? undefined : specText, 
                                     attribute: nummberSpecType ? undefined : specAttribute 
                                 }, 
-                                restriction: 'none' as EventAlertRestriction, 
+                                restriction: 'none' as EventAlertRestriction,
+                                minDuration: minDuration > 0 ? minDuration : undefined,
                                 visual: (headline || text || image?.id) ? {
                                     headline, 
                                     text, 
