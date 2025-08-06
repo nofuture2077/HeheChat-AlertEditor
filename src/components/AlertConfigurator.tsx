@@ -447,7 +447,7 @@ export function AlertView(props: {
                                     attribute: nummberSpecType ? undefined : specAttribute 
                                 }, 
                                 restriction: 'none' as EventAlertRestriction, 
-                                visual: headline ? {
+                                visual: (headline || text || image?.id) ? {
                                     headline, 
                                     text, 
                                     position: position.join(' '), 
