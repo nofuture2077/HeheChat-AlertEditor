@@ -229,15 +229,6 @@ export function AlertView(props: {
                             <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
                             <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
                             <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
-                            <NumberInput 
-                                label="Min Duration (seconds)" 
-                                description="Minimum display duration for this alert"
-                                value={minDuration} 
-                                onChange={(val) => setMinDuration(Number(val))} 
-                                min={0}
-                                step={0.1}
-                                decimalScale={1}
-                            />
                             <MultiSelect
                                 label="Style"
                                 value={layout}
@@ -262,6 +253,14 @@ export function AlertView(props: {
                                     { group: 'Vertical', items: AVAILABLE_CLASSES.position.vertical.map(v => ({ value: v, label: v })) },
                                     { group: 'Horizontal', items: AVAILABLE_CLASSES.position.horizontal.map(v => ({ value: v, label: v })) }
                                 ]}
+                            />
+                                                        <NumberInput 
+                                label="Min Duration (seconds)" 
+                                value={minDuration} 
+                                onChange={(val) => setMinDuration(Number(val))} 
+                                min={0}
+                                step={0.1}
+                                decimalScale={1}
                             />
                         </Stack>
                     </Fieldset>
