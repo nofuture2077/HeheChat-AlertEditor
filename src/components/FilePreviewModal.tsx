@@ -41,11 +41,16 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
   if (!file) return null;
 
   const fileUrl = `data:${file.mime};base64,${file.data}`;
+  
+  // Determine preview type based on MIME type
+  const isAudio = file.mime.startsWith('audio/');
+  const isVideo = file.mime.startsWith('video/');
+  const isImage = !isAudio && !isVideo; // Default to image for non-audio/video files
 
   return (
     <Modal opened={opened} onClose={onClose} title={`${file.name} (${formatFileSize(Math.ceil(file.data.length * 0.75))})`} size="lg">
       <Stack>
-        {file.type === 'image' && (
+        {isImage && (
           <img
             src={fileUrl}
             alt={file.name}
@@ -56,13 +61,13 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
             }}
           />
         )}
-        {file.type === 'audio' && (
+        {isAudio && (
           <audio controls style={{ width: '100%' }}>
             <source src={fileUrl} type={file.mime} />
             Your browser does not support the audio element.
           </audio>
       )}
-      {file.type === 'video' && (
+      {isVideo && (
           <video controls style={{ width: '100%', maxHeight: 300 }}>
             <source src={fileUrl} type={file.mime} />
             Your browser does not support the video element.
