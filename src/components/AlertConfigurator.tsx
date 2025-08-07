@@ -59,7 +59,11 @@ const AVAILABLE_CLASSES = {
     layout: {
         headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'font-headline-fjallaone', 'font-headline-ericaone', 'font-headline-daysone', 'font-headline-pressstart2p', 'font-headline-ultra', 'headline-uppercase'],
         textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'font-text-fjallaone', 'font-text-ericaone', 'font-text-daysone', 'font-text-pressstart2p', 'font-text-ultra', 'text-uppercase'],
-        effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch', 'image-effect-bounce', 'image-effect-shake', 'image-effect-pulse', 'image-effect-wobble', 'image-effect-swing', 'image-effect-rotate', 'image-effect-float', 'image-effect-heartbeat', 'image-effect-jello', 'image-effect-flash'],
+        effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch', 'effect-party', 
+            'effect-hallucination', 'effect-psychedelic', 'effect-rainbow', 'effect-neon', 'effect-glitch-color', 'effect-disco', 'effect-trippy',
+             'image-effect-bounce', 'image-effect-shake', 'image-effect-pulse', 'image-effect-wobble', 'image-effect-swing', 'image-effect-rotate', 
+             'image-effect-float', 'image-effect-heartbeat', 'image-effect-jello', 'image-effect-flash', 'image-effect-party', 'image-effect-hallucination', 
+             'image-effect-psychedelic', 'image-effect-rainbow', 'image-effect-neon', 'image-effect-glitch-color', 'image-effect-disco', 'image-effect-trippy'],
         colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal', 'violett', 'text-dark']
     }
   };
