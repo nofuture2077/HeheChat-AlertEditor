@@ -68,10 +68,26 @@ function App() {
     };
 
     const uploadAlertConfig = async function () {
-        return fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
+        // Create a copy of the alert config without files for the meta request
+        const metaConfig = JSON.parse(JSON.stringify(appContext.alertConfig));
+        if (metaConfig.data && metaConfig.data.files) {
+            metaConfig.data.files = {};
+        }
+        
+        // Make both requests
+        const mainRequest = fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
             body: JSON.stringify({token, data: appContext.alertConfig}),
             method: 'POST'
-        }).then(() => undefined);
+        });
+        
+        const metaRequest = fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/meta', {
+            body: JSON.stringify({token, data: metaConfig}),
+            method: 'POST'
+        });
+        
+        // Wait for both requests to complete
+        await Promise.all([mainRequest, metaRequest]);
+        return undefined;
     }
 
     const replayEvent = async function (event: any) {
