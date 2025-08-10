@@ -75,13 +75,13 @@ function App() {
         }
         
         // Make both requests
-        const mainRequest = fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set', {
-            body: JSON.stringify({token, data: appContext.alertConfig}),
+        const mainRequest = fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/set/' + token, {
+            body: JSON.stringify(appContext.alertConfig),
             method: 'POST'
         });
         
-        const metaRequest = fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/meta', {
-            body: JSON.stringify({token, data: metaConfig}),
+        const metaRequest = fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/meta/' + token, {
+            body: JSON.stringify(metaConfig),
             method: 'POST'
         });
         
