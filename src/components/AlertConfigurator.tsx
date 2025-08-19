@@ -275,8 +275,8 @@ export function AlertView(props: {
                             {voiceType === 'ai' ? (
                                 <Select 
                                     label="AI Voice" 
-                                    data={config.aiVoices.map((voice: {name: string, category: string}) => ({
-                                                value: voice.name,
+                                    data={config.aiVoices.map((voice: {voice_id: string, name: string, category: string}) => ({
+                                                value: voice.voice_id,
                                                 label: voice.category + " - " + voice.name
                                             }))} 
                                     value={voice} 

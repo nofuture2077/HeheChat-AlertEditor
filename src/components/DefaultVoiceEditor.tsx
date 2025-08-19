@@ -127,8 +127,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                         {voiceType === 'ai' ? (
                             <Select 
                                 label="AI Voice" 
-                                data={appContext.aiVoices.map((voice: {name: string, category: string}) => ({
-                                    value: voice.name,
+                                data={appContext.aiVoices.map((voice: {voice_id: string, name: string, category: string}) => ({
+                                    value: voice.voice_id,
                                     label: voice.category + " - " + voice.name
                                 }))} 
                                 value={voice} 
