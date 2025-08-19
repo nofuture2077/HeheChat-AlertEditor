@@ -766,7 +766,11 @@ export function AlertConfigurator(props: NavigationProps) {
             }}
             description={
                 appContext.alertConfig.data?.config?.defaultVoice 
-                    ? `${appContext.alertConfig.data.config.defaultVoice.voiceType.toUpperCase()}: ${appContext.alertConfig.data.config.defaultVoice.voiceSpecifier}`
+                    ? `${appContext.alertConfig.data.config.defaultVoice.voiceType.toUpperCase()}: ${
+                        appContext.alertConfig.data.config.defaultVoice.voiceType === 'ai'
+                            ? appContext.aiVoices.find(v => v.voice_id === appContext.alertConfig.data?.config?.defaultVoice?.voiceSpecifier)?.name || appContext.alertConfig.data.config.defaultVoice.voiceSpecifier
+                            : appContext.alertConfig.data.config.defaultVoice.voiceSpecifier
+                      }`
                     : "No default voice configured"
             }
         />
