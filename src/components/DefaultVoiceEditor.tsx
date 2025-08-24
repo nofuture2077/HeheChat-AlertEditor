@@ -55,7 +55,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                     cheer: [],
                     channelPointRedemption: [],
                     kofi: [],
-                    hypetrain: []
+                    hypetrain: [],
+                    tts: []
                 },
                 files: {}
             };

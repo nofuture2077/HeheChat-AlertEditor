@@ -4,7 +4,7 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS } from './helper';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
@@ -24,6 +24,7 @@ const icons: Record<EventMainType, ReactElement> = {
     'channelPointRedemption':  <IconPlant/>,
     'kofi':  <IconAffiliate/>,
     'hypetrain':  <IconTrain/>,
+    'tts': <IconMessage/>
 }
 
 const fileTypeIcon: Record<string, ReactElement> = {
@@ -498,7 +499,8 @@ export function AlertView(props: {
                             cheer: [],
                             channelPointRedemption: [],
                             kofi: [],
-                            hypetrain: []
+                            hypetrain: [],
+                            tts: []
                         }}
                         onClose={() => setShowCopyModal(false)}
                         onCopy={handleCopyLayout}
@@ -567,7 +569,8 @@ export function AlertConfigurator(props: NavigationProps) {
                     cheer: [],
                     channelPointRedemption: [],
                     kofi: [],
-                    hypetrain: []
+                    hypetrain: [],
+                    tts: []
                 },
                 files: {}
             };
