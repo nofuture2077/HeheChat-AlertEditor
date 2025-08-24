@@ -33,7 +33,7 @@ export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }
     "hypetrain": "Hypetrain"
   };
 
-  const mainTypes = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'hypetrain'].map(type => ({
+  const mainTypes = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'kofi', 'hypetrain', 'tts'].map(type => ({
     value: type,
     label: alertTypes[type]
   }));

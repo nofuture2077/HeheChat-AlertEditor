@@ -44,7 +44,8 @@ const alertTypes: Record<string, string> = {
     "cheer": "Bit-Donations",
     "channelPointRedemption": "Channel Points",
     "kofi": "Ko-Fi Integration",
-    "hypetrain": "Hypetrain"
+    "hypetrain": "Hypetrain",
+    "tts": "Read Chat"
 };
 
 const AVAILABLE_CLASSES = {
