@@ -14,7 +14,7 @@ export function DropZone(props: {onSelect: (file: File) => void}) {
         props.onSelect(file);
       }}
       onReject={(files) => console.log('rejected files', files)}
-      maxSize={4 * 1024 ** 2}
+      maxSize={10 * 1024 ** 2}
       accept={["audio/mpeg", "image/webp", "video/webm", "application/zip"]}
       multiple={false}
     >
