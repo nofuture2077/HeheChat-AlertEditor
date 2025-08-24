@@ -575,6 +575,12 @@ export function AlertConfigurator(props: NavigationProps) {
                 files: {}
             };
         }
+
+        if (config.data.alerts) {
+            config.data.alerts.kofi ||= [];
+            config.data.alerts.hypetrain ||= [];
+            config.data.alerts.tts ||= [];
+        }
         
         if (!config.data.config) {
             config.data.config = {};
