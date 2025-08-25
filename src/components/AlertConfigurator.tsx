@@ -6,7 +6,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
-import { generateGUID, readFile, previewTTS } from './helper';
+import { generateGUID, readFile, previewTTS, hashObjectSHA256 } from './helper';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 
@@ -555,7 +555,7 @@ export function AlertConfigurator(props: NavigationProps) {
     const [defaultVoiceOpened, setDefaultVoiceOpened] = useState(false);
 
     // Ensure config structure is initialized
-    const ensureConfigStructure = () => {
+    const ensureConfigStructure = async () => {
         const config = { ...appContext.alertConfig };
         
         if (!config.data) {
@@ -580,7 +580,26 @@ export function AlertConfigurator(props: NavigationProps) {
         if (config.data.alerts) {
             config.data.alerts.kofi ||= [];
             config.data.alerts.hypetrain ||= [];
-            config.data.alerts.tts ||= [];
+            config.data.alerts.tts ||= [{
+                name: 'Read Chat',
+                id: generateGUID(),
+                type: 'tts',
+                specifier: {
+                    type: 'min',
+                    amount: 0
+                },
+                restriction: 'none',
+                audio: {
+                    tts: {
+                        voiceType: 'default',
+                        voiceSpecifier: '',
+                        voiceParams: {},
+                        text: '${username}: ${text}'
+                    }
+                }
+            }];
+
+            config.meta.hash = await(hashObjectSHA256(config.data))
         }
         
         if (!config.data.config) {
@@ -591,14 +610,11 @@ export function AlertConfigurator(props: NavigationProps) {
             config.data.config.ttsReplacements = {};
         }
         
-        // Only update if something was missing
-        if (!appContext.alertConfig.data?.config?.ttsReplacements) {
-            appContext.setAlertConfig(config);
-        }
+        appContext.setAlertConfig(config);
     };
 
-    const setName = function (name: string) {
-        ensureConfigStructure();
+    const setName = async function (name: string) {
+        await ensureConfigStructure();
         appContext.alertConfig.meta.name = name;
         appContext.setAlertConfig(appContext.alertConfig);
     }
@@ -752,7 +768,7 @@ export function AlertConfigurator(props: NavigationProps) {
         {confirmDeleteOpen ? confirmDeleteComponent : null}
         <Text>Meta-Information</Text>
         <TextInput label="Channel" value={appContext.alertConfig.meta.channel} readOnly disabled />
-        <TextInput label="Name" value={appContext.alertConfig.meta.name} onChange={(ev) => setName(ev.target.value)} />
+        <TextInput label="Name" value={appContext.alertConfig.meta.name} onChange={async (ev) => await setName(ev.target.value)} />
         <TextInput label="GUID" value={appContext.alertConfig.meta.guid} readOnly disabled />
         <TextInput label="Hash" value={appContext.alertConfig.meta.hash} readOnly disabled />
         <TextInput label="Last Update" value={appContext.alertConfig.meta.lastUpdate} readOnly disabled />
@@ -761,8 +777,8 @@ export function AlertConfigurator(props: NavigationProps) {
         <NavLink 
             label="TTS Text Replacements" 
             leftSection={<IconSettings />}
-            onClick={() => {
-                ensureConfigStructure();
+            onClick={async () => {
+                await ensureConfigStructure();
                 setTtsReplacementsOpened(true);
             }}
             description={`${Object.keys(appContext.alertConfig.data?.config?.ttsReplacements || {}).length} replacement rules configured`}
@@ -770,8 +786,8 @@ export function AlertConfigurator(props: NavigationProps) {
         <NavLink 
             label="Default Voice" 
             leftSection={<IconMusic />}
-            onClick={() => {
-                ensureConfigStructure();
+            onClick={async () => {
+                await ensureConfigStructure();
                 setDefaultVoiceOpened(true);
             }}
             description={
