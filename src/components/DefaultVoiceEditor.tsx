@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { 
     Modal, 
     Fieldset, 
@@ -38,6 +38,25 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
         }
         return 'de-DE'; // Default to German
     });
+
+    // Update state when context changes or when modal is opened
+    useEffect(() => {
+        if (opened) {
+            const currentDefaultVoice = appContext.alertConfig.data?.config?.defaultVoice;
+            
+            if (currentDefaultVoice) {
+                setVoiceType(currentDefaultVoice.voiceType || 'google');
+                setVoice(currentDefaultVoice.voiceSpecifier || '');
+                
+                if (currentDefaultVoice.voiceType === 'google' && currentDefaultVoice.voiceSpecifier) {
+                    const voiceData = appContext.googleVoices.find(v => v.name === currentDefaultVoice.voiceSpecifier);
+                    if (voiceData && voiceData.languageCodes.length > 0) {
+                        setSelectedLanguage(voiceData.languageCodes[0]);
+                    }
+                }
+            }
+        }
+    }, [appContext.alertConfig.data?.config?.defaultVoice, opened, appContext.googleVoices]);
 
     const handleSave = () => {
         const config = { ...appContext.alertConfig };

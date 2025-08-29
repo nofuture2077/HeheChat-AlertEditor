@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { 
     Modal, 
     Fieldset, 
@@ -32,6 +32,18 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
             value
         }));
     });
+
+    // Update replacements when context changes or when modal is opened
+    useEffect(() => {
+        if (opened) {
+            const ttsReplacements = appContext.alertConfig.data?.config?.ttsReplacements || {};
+            setReplacements(Object.entries(ttsReplacements).map(([key, value], index) => ({
+                id: `replacement-${index}-${Date.now()}`,
+                key,
+                value
+            })));
+        }
+    }, [appContext.alertConfig.data?.config?.ttsReplacements, opened]);
 
     const handleAddReplacement = () => {
         const newReplacement = {
