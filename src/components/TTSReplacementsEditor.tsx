@@ -89,12 +89,13 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
             config.data.config = {};
         }
 
-        // Convert array back to Record and filter out empty replacements
-        const filteredReplacements = Object.fromEntries(
-            replacements
-                .filter(item => item.key.trim() !== '' && item.value.trim() !== '')
-                .map(item => [item.key, item.value])
-        );
+    // Convert array back to Record and filter out replacements with empty keys
+    // Allow empty values to support replacing text with nothing (removing it)
+    const filteredReplacements = Object.fromEntries(
+        replacements
+            .filter(item => item.key.trim() !== '')
+            .map(item => [item.key, item.value || ''])
+    );
 
         config.data.config.ttsReplacements = filteredReplacements;
         appContext.setAlertConfig(config);
@@ -184,7 +185,9 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
                                 <strong>Find:</strong> "bad*" → <strong>Replace with:</strong> "good"<br/>
                                 <strong>Result:</strong> "badword" becomes "good", "badthing" becomes "good"<br/><br/>
                                 <strong>Find:</strong> "lol" → <strong>Replace with:</strong> "laugh out loud"<br/>
-                                <strong>Result:</strong> "That's so lol!" becomes "That's so laugh out loud!"
+                                <strong>Result:</strong> "That's so lol!" becomes "That's so laugh out loud!"<br/><br/>
+                                <strong>Find:</strong> "umm" → <strong>Replace with:</strong> "" (empty)<br/>
+                                <strong>Result:</strong> "I umm don't know" becomes "I don't know" (removes "umm")
                             </Text>
                         </Alert>
                     </>
