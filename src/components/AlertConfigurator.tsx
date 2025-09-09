@@ -218,7 +218,7 @@ export function AlertView(props: {
                     <Fieldset legend={props.title}>
                         <TextInput label="Id" value={id} readOnly disabled style={{ display: 'none' }}></TextInput>
                         <TextInput label="Name" value={name} onChange={(ev) => setName(ev.target.value)}></TextInput>
-                        <Select label="Jingle" data={['none'].concat(props.fileRefs.filter(x => x.type === 'audio').map(x => x.name || ''))} value={jingle?.name} onChange={(value) => setJingle(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
+                        <Select label="Jingle" data={['none'].concat(props.fileRefs.filter(x => x.type === 'audio' || x.type === 'video').map(x => x.name || ''))} value={jingle?.name} onChange={(value) => setJingle(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
                     </Fieldset>
 
                     <Fieldset legend="Trigger">
