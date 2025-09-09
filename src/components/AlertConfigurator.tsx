@@ -234,7 +234,7 @@ export function AlertView(props: {
 
                     <Fieldset legend="Browser Overlay">
                         <Stack>
-                            <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
+                            <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image' || x.type === 'video' || x.type === 'application/zip').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
                             <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
                             <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
                             <MultiSelect
