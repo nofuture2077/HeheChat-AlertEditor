@@ -46,7 +46,9 @@ const AlertEditor = () => {
 
   const handleExport = () => {
     const config = appContext.alertConfig;
-    const filename = `${config.meta.name.replace(/\s+/g, '_')}.json`;
+    const now = new Date();
+    const dateTime = now.toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 16);
+    const filename = `${config.meta.channel}_${dateTime}.json`;
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
