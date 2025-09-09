@@ -526,6 +526,7 @@ export function UploadFileView(props: {
     const [fileSize, setFileSize] = useState<number>(0);
     const [fileSizeWarning, setFileSizeWarning] = useState<boolean>(false);
     const [fileSizeError, setFileSizeError] = useState<boolean>(false);
+    const [nameError, setNameError] = useState<string | null>(null);
     const appContext = useContext<AppContextProps>(AppContext);
 
     // Calculate current config size
@@ -537,6 +538,53 @@ export function UploadFileView(props: {
     // Calculate the estimated new config size after adding this file
     const calculateEstimatedNewSize = () => {
         return calculateCurrentConfigSize() + fileSize;
+    };
+
+    // Check if filename is unique
+    const isFilenameUnique = (filename: string): boolean => {
+        return !Object.values(appContext.alertConfig.data?.files || {}).some(
+            file => file.name === filename
+        );
+    };
+
+    // Generate a unique filename by adding a suffix
+    const generateUniqueFilename = (originalName: string): string => {
+        // If name is already unique, return it
+        if (isFilenameUnique(originalName)) {
+            return originalName;
+        }
+
+        // Split filename into name and extension
+        const lastDotIndex = originalName.lastIndexOf('.');
+        const baseName = lastDotIndex !== -1 ? originalName.substring(0, lastDotIndex) : originalName;
+        const extension = lastDotIndex !== -1 ? originalName.substring(lastDotIndex) : '';
+        
+        // Try adding numbers until we find a unique name
+        let counter = 1;
+        let newName = `${baseName}_${counter}${extension}`;
+        
+        while (!isFilenameUnique(newName)) {
+            counter++;
+            newName = `${baseName}_${counter}${extension}`;
+        }
+        
+        return newName;
+    };
+
+    // Validate filename when it changes
+    const validateFilename = (filename: string) => {
+        if (!filename) {
+            setNameError("Filename cannot be empty");
+            return false;
+        }
+        
+        if (!isFilenameUnique(filename)) {
+            setNameError("Filename must be unique. Please choose a different name.");
+            return false;
+        }
+        
+        setNameError(null);
+        return true;
     };
 
     const onSelect = function (file: File) {
@@ -555,7 +603,9 @@ export function UploadFileView(props: {
             setFileSizeWarning(true);
         }
         
-        setName(file.name);
+        // Generate a unique filename
+        const uniqueFilename = generateUniqueFilename(file.name);
+        setName(uniqueFilename);
         setMime(file.type);
         setType(file.type.startsWith('audio') ? 'audio' : 'image');
         readFile(file).then((data: string) => {
@@ -568,7 +618,16 @@ export function UploadFileView(props: {
                 <DropZone onSelect={onSelect}></DropZone>
                 <TextInput label="Id" value={id} readOnly disabled></TextInput>
                 <TextInput label="Type" value={mime} readOnly disabled></TextInput>
-                <TextInput label="Name" value={name} onChange={(ev) => setName(ev.target.value)}></TextInput>
+                <TextInput 
+                    label="Name" 
+                    value={name} 
+                    onChange={(ev) => {
+                        setName(ev.target.value);
+                        validateFilename(ev.target.value);
+                    }}
+                    error={nameError}
+                    required
+                ></TextInput>
                 
                 {fileSize > 0 && (
                     <Group mt="xs">
@@ -610,7 +669,7 @@ export function UploadFileView(props: {
                         variant="filled" 
                         color="pink" 
                         onClick={() => props.confirm({ id, name, mime, type, data })}
-                        disabled={fileSizeError || !data}
+                        disabled={fileSizeError || !data || !!nameError || !name}
                     >
                         Upload
                     </Button>
