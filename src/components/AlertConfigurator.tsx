@@ -689,7 +689,11 @@ export function AlertConfigurator(props: NavigationProps) {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
             {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => (
               <NavLink 
-                onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)} 
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert);
+                }}
                 leftSection={
                   <ActionIcon variant='transparent'>
                     {icons[ev as EventMainType]}
@@ -697,10 +701,18 @@ export function AlertConfigurator(props: NavigationProps) {
                 } 
                 rightSection={
                   <Group gap={0}>
-                    <ActionIcon variant='subtle' onClick={() => cloneAlert(alert)}>
+                    <ActionIcon variant='subtle' onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        cloneAlert(alert);
+                    }}>
                       <IconPlus />
                     </ActionIcon>
-                    <ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}>
+                    <ActionIcon variant='subtle' onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id));
+                    }}>
                       <IconTrash />
                     </ActionIcon>
                   </Group>
