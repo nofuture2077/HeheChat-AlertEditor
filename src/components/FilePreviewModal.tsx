@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, Stack, TextInput, Group, Button, Text } from '@mantine/core';
+import { Modal, Stack, TextInput, Group, Button, Text, Center } from '@mantine/core';
+import { IconFile } from '@tabler/icons-react';
 import { formatFileSize } from './helper';
 
 interface FilePreviewModalProps {
@@ -10,7 +11,7 @@ interface FilePreviewModalProps {
     id: string;
     name: string;
     mime: string;
-    type: 'audio' | 'image' | 'video';
+    type: 'audio' | 'image' | 'video' | 'application/zip';
     data: string;
   } | null;
 }
@@ -45,7 +46,8 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
   // Determine preview type based on MIME type
   const isAudio = file.mime.startsWith('audio/');
   const isVideo = file.mime.startsWith('video/');
-  const isImage = !isAudio && !isVideo; // Default to image for non-audio/video files
+  const isZip = file.mime === 'application/zip';
+  const isImage = !isAudio && !isVideo && !isZip; // Default to image for other files
 
   return (
     <Modal opened={opened} onClose={onClose} title={`${file.name} (${formatFileSize(Math.ceil(file.data.length * 0.75))})`} size="lg">
@@ -60,6 +62,12 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
               objectFit: 'contain',
             }}
           />
+        )}
+        {isZip && (
+          <Center style={{ height: 300 }}>
+            <IconFile size={100} />
+            <Text size="lg" ml="md">ZIP Archive</Text>
+          </Center>
         )}
         {isAudio && (
           <audio controls style={{ width: '100%' }}>

@@ -32,6 +32,7 @@ const fileTypeIcon: Record<string, ReactElement> = {
     'audio': <IconMusic />,
     'image': <IconPhoto />,
     'video': <IconVideo />,
+    'application/zip': <IconFile />
 }
 
 
@@ -137,7 +138,7 @@ export function CopyLayoutModal(props: {
 export function AlertView(props: {
     data?: EventAlert,
     type: EventMainType,
-    fileRefs: { name: string, id: string, type: 'audio' | 'image' | 'video' }[],
+    fileRefs: { name: string, id: string, type: 'audio' | 'image' | 'video' | 'application/zip' }[],
     title: string;
     close: () => void;
     confirm: (date: EventAlert) => void;
@@ -522,7 +523,7 @@ export function UploadFileView(props: {
     const [name, setName] = useState("");
     const [mime, setMime] = useState("");
     const [data, setData] = useState("");
-    const [type, setType] = useState<'audio' | 'image'>('audio');
+    const [type, setType] = useState<'audio' | 'image' | 'video' | 'application/zip'>('audio');
     const [fileSize, setFileSize] = useState<number>(0);
     const [fileSizeWarning, setFileSizeWarning] = useState<boolean>(false);
     const [fileSizeError, setFileSizeError] = useState<boolean>(false);
@@ -607,7 +608,15 @@ export function UploadFileView(props: {
         const uniqueFilename = generateUniqueFilename(file.name);
         setName(uniqueFilename);
         setMime(file.type);
-        setType(file.type.startsWith('audio') ? 'audio' : 'image');
+        if (file.type.startsWith('audio')) {
+            setType('audio');
+        } else if (file.type.startsWith('video')) {
+            setType('video');
+        } else if (file.type === 'application/zip') {
+            setType('application/zip');
+        } else {
+            setType('image');
+        }
         readFile(file).then((data: string) => {
             setData(data.split(',')[1]);
         });
