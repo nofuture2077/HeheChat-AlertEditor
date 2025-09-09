@@ -6,7 +6,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
-import { generateGUID, readFile, previewTTS, hashObjectSHA256 } from './helper';
+import { generateGUID, readFile, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 
@@ -687,7 +687,28 @@ export function AlertConfigurator(props: NavigationProps) {
 
     const alertNodes = <>{Object.keys(alertTypes).map((ev) => {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
-            {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => <NavLink leftSection={<ActionIcon variant='transparent' onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)}>{icons[ev as EventMainType]}</ActionIcon>} rightSection={<Group gap={0}><ActionIcon variant='subtle' onClick={() => cloneAlert(alert)}><IconPlus /></ActionIcon><ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}><IconTrash /></ActionIcon></Group>} key={alert.id} label={alert.name} />)}
+            {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => (
+              <NavLink 
+                onClick={() => addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert)} 
+                leftSection={
+                  <ActionIcon variant='transparent'>
+                    {icons[ev as EventMainType]}
+                  </ActionIcon>
+                } 
+                rightSection={
+                  <Group gap={0}>
+                    <ActionIcon variant='subtle' onClick={() => cloneAlert(alert)}>
+                      <IconPlus />
+                    </ActionIcon>
+                    <ActionIcon variant='subtle' onClick={() => confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id))}>
+                      <IconTrash />
+                    </ActionIcon>
+                  </Group>
+                } 
+                key={alert.id} 
+                label={alert.name} 
+              />
+            ))}
             <NavLink leftSection={<IconPlus />} label="Add New" key={ev + "-new"} onClick={() => addAlertView(ev as EventMainType, 'Add Alert: ' + alertTypes[ev], addAlert)}></NavLink>
         </NavLink>
     })}</>;
@@ -725,17 +746,48 @@ export function AlertConfigurator(props: NavigationProps) {
         setPreviewOpened(true);
     };
 
+    // Calculate file size from Base64 data
+    const getFileSize = (base64Data: string): number => {
+        // Base64 string length * 0.75 gives approximate byte size
+        return base64Data ? Math.round(base64Data.length * 0.75) : 0;
+    };
+
+    // Count how many alerts use each file
+    const countFileUsage = (fileId: string): number => {
+        let count = 0;
+        const alerts = appContext.alertConfig.data?.alerts || {};
+        
+        Object.values(alerts).forEach((alertArray) => {
+            (alertArray as EventAlert[]).forEach((alert: EventAlert) => {
+                // Check if file is used as jingle
+                if (alert.audio?.jingle === fileId) {
+                    count++;
+                }
+                // Check if file is used as visual element
+                if (alert.visual?.element === fileId) {
+                    count++;
+                }
+            });
+        });
+        
+        return count;
+    };
+
     const fileNodes = <>{Object.values(appContext.alertConfig.data?.files || {}).map((file) => {
+        const fileSize = getFileSize(file.data);
+        const usageCount = countFileUsage(file.id);
+        
         return <NavLink 
             leftSection={
-                <ActionIcon variant='transparent' onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handlePreviewOpen(file);
-                }}>
+                <ActionIcon variant='transparent'>
                     {fileTypeIcon[file.type]}
                 </ActionIcon>
             } 
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handlePreviewOpen(file);
+            }}
             rightSection={
                 <ActionIcon variant='subtle' onClick={(e) => {
                     e.preventDefault();
@@ -747,6 +799,7 @@ export function AlertConfigurator(props: NavigationProps) {
             } 
             key={file.id} 
             label={file.name}
+            description={`${formatFileSize(fileSize)} • Used in ${usageCount} alert${usageCount !== 1 ? 's' : ''}`}
         />
     })}</>;
 
