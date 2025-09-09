@@ -1,12 +1,13 @@
 import { useContext, ReactElement, useState, useMemo } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
+import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 
@@ -522,14 +523,44 @@ export function UploadFileView(props: {
     const [mime, setMime] = useState("");
     const [data, setData] = useState("");
     const [type, setType] = useState<'audio' | 'image'>('audio');
+    const [fileSize, setFileSize] = useState<number>(0);
+    const [fileSizeWarning, setFileSizeWarning] = useState<boolean>(false);
+    const [fileSizeError, setFileSizeError] = useState<boolean>(false);
+    const appContext = useContext<AppContextProps>(AppContext);
+
+    // Calculate current config size
+    const calculateCurrentConfigSize = () => {
+        const configString = JSON.stringify(appContext.alertConfig);
+        return new Blob([configString]).size;
+    };
+
+    // Calculate the estimated new config size after adding this file
+    const calculateEstimatedNewSize = () => {
+        return calculateCurrentConfigSize() + fileSize;
+    };
 
     const onSelect = function (file: File) {
+        // Check file size - individual files over 20MB will trigger a warning
+        const fileSizeMB = file.size / (1024 * 1024);
+        setFileSize(file.size);
+        
+        // Check if adding this file would push the config over limits
+        const currentSizeMB = calculateCurrentConfigSize() / (1024 * 1024);
+        const estimatedNewSizeMB = currentSizeMB + fileSizeMB;
+        
+        if (estimatedNewSizeMB >= 100) {
+            setFileSizeError(true);
+            return;
+        } else if (fileSizeMB >= 20 || estimatedNewSizeMB >= 50) {
+            setFileSizeWarning(true);
+        }
+        
         setName(file.name);
         setMime(file.type);
         setType(file.type.startsWith('audio') ? 'audio' : 'image');
         readFile(file).then((data: string) => {
             setData(data.split(',')[1]);
-        })
+        });
     }
     return (
         <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false}>
@@ -538,9 +569,51 @@ export function UploadFileView(props: {
                 <TextInput label="Id" value={id} readOnly disabled></TextInput>
                 <TextInput label="Type" value={mime} readOnly disabled></TextInput>
                 <TextInput label="Name" value={name} onChange={(ev) => setName(ev.target.value)}></TextInput>
+                
+                {fileSize > 0 && (
+                    <Group mt="xs">
+                        <Text size="sm">File size: {formatFileSize(fileSize)}</Text>
+                        {fileSizeWarning && !fileSizeError && (
+                            <Badge color="yellow">Large file</Badge>
+                        )}
+                    </Group>
+                )}
+                
+                {fileSizeWarning && !fileSizeError && (
+                    <Alert 
+                        color="yellow" 
+                        title="Large File Warning" 
+                        icon={<IconAlertTriangle size={16} />}
+                        mt="sm"
+                    >
+                        This file is large ({formatFileSize(fileSize)}). Adding it will make your config approximately {formatFileSize(calculateEstimatedNewSize())}.
+                        {calculateEstimatedNewSize() / (1024 * 1024) >= 50 && (
+                            <Text mt="xs">This will exceed the 50MB warning threshold.</Text>
+                        )}
+                    </Alert>
+                )}
+                
+                {fileSizeError && (
+                    <Alert 
+                        color="red" 
+                        title="File Too Large" 
+                        icon={<IconAlertTriangle size={16} />}
+                        mt="sm"
+                    >
+                        Adding this file would make your config exceed the 100MB limit. Please use a smaller file or optimize this one.
+                    </Alert>
+                )}
+                
                 <Group justify="space-around" mt="md">
                     <Button onClick={props.close}>Cancel</Button>
-                    <Button variant="filled" color="pink" onClick={() => props.confirm({ id, name, mime, type, data })}>Upload</Button>
+                    <Button 
+                        variant="filled" 
+                        color="pink" 
+                        onClick={() => props.confirm({ id, name, mime, type, data })}
+                        disabled={fileSizeError || !data}
+                    >
+                        Upload
+                    </Button>
                 </Group>
             </Fieldset>
         </Modal>);
@@ -837,6 +910,66 @@ export function AlertConfigurator(props: NavigationProps) {
         <TextInput label="GUID" value={appContext.alertConfig.meta.guid} readOnly disabled />
         <TextInput label="Hash" value={appContext.alertConfig.meta.hash} readOnly disabled />
         <TextInput label="Last Update" value={appContext.alertConfig.meta.lastUpdate} readOnly disabled />
+        
+        {/* File Size Indicator */}
+        {(() => {
+            const calculateConfigSize = () => {
+                const configString = JSON.stringify(appContext.alertConfig);
+                return new Blob([configString]).size;
+            };
+            
+            const configSize = calculateConfigSize();
+            const sizeInMB = configSize / (1024 * 1024);
+            
+            let color, message, icon;
+            
+            if (sizeInMB < 20) {
+                color = 'green';
+                message = 'Recommended';
+                icon = <IconCheck size={16} />;
+            } else if (sizeInMB >= 20 && sizeInMB < 50) {
+                color = 'blue';
+                message = 'Okay';
+                icon = <IconInfoCircle size={16} />;
+            } else if (sizeInMB >= 50 && sizeInMB < 100) {
+                color = 'yellow';
+                message = 'Warning';
+                icon = <IconAlertTriangle size={16} />;
+            } else {
+                color = 'red';
+                message = 'Error';
+                icon = <IconAlertTriangle size={16} />;
+            }
+            
+            // Calculate percentage for progress bar (100% = 100MB)
+            const percentage = Math.min(sizeInMB, 100);
+            
+            return (
+                <Stack gap="xs" mt="md">
+                    <Group justify="space-between">
+                        <Text size="sm" fw={500}>Alert Config Size</Text>
+                        <Group gap="xs">
+                            <Text size="sm">{formatFileSize(configSize)}</Text>
+                            <Badge color={color} leftSection={icon}>
+                                {message}
+                            </Badge>
+                        </Group>
+                    </Group>
+                    <Progress 
+                        value={percentage} 
+                        color={color}
+                        size="sm"
+                    />
+                    {sizeInMB >= 50 && (
+                        <Text size="xs" color={color} fs="italic">
+                            {sizeInMB >= 100 
+                                ? "Size exceeds 100MB limit. You won't be able to save until you reduce the size."
+                                : "Size exceeds 50MB warning threshold. Consider optimizing your files."}
+                        </Text>
+                    )}
+                </Stack>
+            );
+        })()}
         <Space h="xl" />
         <Text>TTS Configuration</Text>
         <NavLink 

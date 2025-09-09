@@ -14,7 +14,6 @@ export function DropZone(props: {onSelect: (file: File) => void}) {
         props.onSelect(file);
       }}
       onReject={(files) => console.log('rejected files', files)}
-      maxSize={10 * 1024 ** 2}
       accept={["audio/mpeg", "image/webp", "video/webm", "application/zip"]}
       multiple={false}
     >
@@ -42,7 +41,7 @@ export function DropZone(props: {onSelect: (file: File) => void}) {
           <Text size="sm" c="dimmed" inline mt={7}>
             {selectedFile ? 
               `Selected: ${selectedFile.name} (${formatFileSize(selectedFile.size)})` : 
-              'File Limit is 4 MB'}
+              ''}
           </Text>
         </div>
       </Group>
