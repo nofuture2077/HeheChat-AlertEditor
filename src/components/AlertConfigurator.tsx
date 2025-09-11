@@ -55,8 +55,8 @@ const AVAILABLE_CLASSES = {
         alignment: ['align-left', 'align-center', 'align-right'],
         imageSizes: ['image-xs', 'image-sm', 'image-md', 'image-lg', 'image-xl', 'image-scale2', 'image-scale3'],
         imagePosition: ['image-fixed-bottom', 'image-fixed-left', 'image-fixed-right', 'text-over-image'],
-        headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl'],
-        textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl'],
+        headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl', 'headline-w-xs', 'headline-w-sm', 'headline-w-md', 'headline-w-lg', 'headline-w-xl'],
+        textSizes: ['text-xs', 'text-sm', 'text-md', 'text-lg', 'text-xl', 'text-w-xs', 'text-w-sm', 'text-w-md', 'text-w-lg', 'text-w-xl'],
         vertical: ['top', 'middle', 'bottom'],
         horizontal: ['left', 'center', 'right']
     },
