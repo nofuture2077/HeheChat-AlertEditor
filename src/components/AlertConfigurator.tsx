@@ -826,6 +826,23 @@ export function AlertConfigurator(props: NavigationProps) {
         addAlertView(alert.type as EventMainType, 'Edit Alert: ' + clonedAlert.name, addAlert, clonedAlert);
     };
 
+    const formatDescription = function(alert: EventAlert) {
+        let suffix = '';
+        switch (alert.type) {
+            case 'raid': suffix = ' Viewers';break;
+            case 'cheer': suffix = ' Bits';break;
+            case 'sub': suffix = ' Months';break;
+            case 'subgift': suffix = ' Subs';break;
+            case 'subgiftb': suffix = ' Subs';break;
+            case 'hypetrain': suffix = ' Level';break;
+        }
+        switch (alert.specifier.type) {
+            case 'min': return alert.specifier.amount + "+" + suffix;
+            case 'exact': return alert.specifier.amount + suffix;
+            case 'matches': return alert.specifier.attribute +  ": " + alert.specifier.text;
+        }
+    }
+
     const alertNodes = <>{Object.keys(alertTypes).map((ev) => {
         return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
             {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => (
@@ -835,6 +852,7 @@ export function AlertConfigurator(props: NavigationProps) {
                     e.stopPropagation();
                     addAlertView(ev as EventMainType, 'Edit Alert: ' + alert.name, addAlert, alert);
                 }}
+                description={formatDescription(alert)}
                 leftSection={
                   <ActionIcon variant='transparent'>
                     {icons[ev as EventMainType]}
