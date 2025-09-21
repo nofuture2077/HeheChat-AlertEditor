@@ -67,7 +67,14 @@ const AVAILABLE_CLASSES = {
             'effect-hallucination', 'effect-psychedelic', 'effect-rainbow', 'effect-neon', 'effect-glitch-color', 'effect-disco', 'effect-trippy',
              'image-effect-bounce', 'image-effect-shake', 'image-effect-pulse', 'image-effect-wobble', 'image-effect-swing', 'image-effect-rotate', 
              'image-effect-float', 'image-effect-heartbeat', 'image-effect-jello', 'image-effect-flash', 'image-effect-party', 'image-effect-hallucination', 
-             'image-effect-psychedelic', 'image-effect-rainbow', 'image-effect-neon', 'image-effect-glitch-color', 'image-effect-disco', 'image-effect-trippy'],
+             'image-effect-psychedelic', 'image-effect-rainbow', 'image-effect-neon', 'image-effect-glitch-color', 'image-effect-disco', 'image-effect-trippy',
+            'fade-text-3s', 'fade-text-5s', 'fade-text-7s', 'fade-image-3s', 'fade-image-5s', 'fade-image-7s', 'fade-text-up-3s', 'fade-text-up-5s', 'fade-text-up-7s', 
+            'fade-text-down-3s', 'fade-text-down-5s', 'fade-text-down-7s', 'fade-text-left-3s', 'fade-text-left-5s', 'fade-text-left-7s', 
+            'fade-text-right-3s', 'fade-text-right-5s', 'fade-text-right-7s', 'fade-text-scale-3s', 'fade-text-scale-5s', 'fade-text-scale-7s', 
+            'fade-text-rotate-3s', 'fade-text-rotate-5s', 'fade-text-rotate-7s', 'fade-image-up-3s', 'fade-image-up-5s', 'fade-image-up-7s', 'fade-image-down-3s', 
+            'fade-image-down-5s', 'fade-image-down-7s', 'fade-image-left-3s', 'fade-image-left-5s', 'fade-image-left-7s', 'fade-image-right-3s', 'fade-image-right-5s', 
+            'fade-image-right-7s', 'fade-image-scale-3s', 'fade-image-scale-5s', 'fade-image-scale-7s', 'fade-image-rotate-3s', 'fade-image-rotate-5s', 'fade-image-rotate-7s', 
+            'fade-text-char-3s', 'fade-text-char-5s', 'fade-text-char-7s'],
         colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal', 'violett', 'text-dark']
     }
   };
