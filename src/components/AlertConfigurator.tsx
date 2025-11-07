@@ -52,7 +52,7 @@ const alertTypes: Record<string, string> = {
 
 const AVAILABLE_CLASSES = {
     position: {
-        alignment: ['align-left', 'align-center', 'align-right'],
+        alignment: ['align-left', 'align-center', 'align-right', 'image-bottom'],
         imageSizes: ['image-xs', 'image-sm', 'image-md', 'image-lg', 'image-xl', 'image-scale2', 'image-scale3'],
         imagePosition: ['image-fixed-bottom', 'image-fixed-left', 'image-fixed-right', 'text-over-image'],
         headlineSizes: ['headline-xs', 'headline-sm', 'headline-md', 'headline-lg', 'headline-xl', 'headline-w-xs', 'headline-w-sm', 'headline-w-md', 'headline-w-lg', 'headline-w-xl'],
