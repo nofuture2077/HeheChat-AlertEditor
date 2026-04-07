@@ -233,7 +233,7 @@ export function AlertView(props: {
                             <Select label="Type" data={['min', 'exact', 'matches']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' | 'matches' || specType)} />
                             {nummberSpecType ? <NumberInput label="Amount" value={specAmount} onChange={(val) => setSpecAmount(Number(val))} /> : 
                             <>
-                                <Select label="Attribute" value={specAttribute} data={['rewardTitle', 'username', 'type']} onChange={(value) => setSpecAttribute(value || undefined)} />
+                                <Select label="Attribute" value={specAttribute} data={['rewardTitle', 'username', 'type', 'eventType']} onChange={(value) => setSpecAttribute(value || undefined)} />
                                 <TextInput label="Text" value={specText} onChange={(ev) => setSpecText(ev.target.value)} />
                             </>}
                         </Stack>
