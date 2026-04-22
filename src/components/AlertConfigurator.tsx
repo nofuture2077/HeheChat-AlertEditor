@@ -4,7 +4,7 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
@@ -25,7 +25,8 @@ const icons: Record<EventMainType, ReactElement> = {
     'channelPointRedemption':  <IconPlant/>,
     'kofi':  <IconAffiliate/>,
     'hypetrain':  <IconTrain/>,
-    'tts': <IconMessage/>
+    'tts': <IconMessage/>,
+    'streak': <IconBoltFilled/>
 }
 
 const fileTypeIcon: Record<string, ReactElement> = {
@@ -47,7 +48,8 @@ const alertTypes: Record<string, string> = {
     "channelPointRedemption": "Channel Points",
     "kofi": "Ko-Fi Integration",
     "hypetrain": "Hypetrain",
-    "tts": "Read Chat"
+    "tts": "Read Chat",
+    "streak": "Watch Streak"
 };
 
 const AVAILABLE_CLASSES = {
@@ -510,7 +512,8 @@ export function AlertView(props: {
                             channelPointRedemption: [],
                             kofi: [],
                             hypetrain: [],
-                            tts: []
+                            tts: [],
+                            streak: []
                         }}
                         onClose={() => setShowCopyModal(false)}
                         onCopy={handleCopyLayout}
@@ -719,7 +722,8 @@ export function AlertConfigurator(props: NavigationProps) {
                     channelPointRedemption: [],
                     kofi: [],
                     hypetrain: [],
-                    tts: []
+                    tts: [],
+                    streak: []
                 },
                 files: {}
             };
@@ -728,6 +732,7 @@ export function AlertConfigurator(props: NavigationProps) {
         if (config.data.alerts) {
             config.data.alerts.kofi ||= [];
             config.data.alerts.hypetrain ||= [];
+            config.data.alerts.streak ||= [];
             config.data.alerts.tts ||= [{
                 name: 'Read Chat',
                 id: generateGUID(),
@@ -842,6 +847,7 @@ export function AlertConfigurator(props: NavigationProps) {
             case 'subgift': suffix = ' Subs';break;
             case 'subgiftb': suffix = ' Subs';break;
             case 'hypetrain': suffix = ' Level';break;
+            case 'streak': suffix = ' Streams';break;
         }
         switch (alert.specifier.type) {
             case 'min': return alert.specifier.amount + "+" + suffix;

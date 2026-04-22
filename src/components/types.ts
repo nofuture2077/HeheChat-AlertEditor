@@ -6,7 +6,7 @@ export type EventType = 'raid' | 'follow' | 'cheer'| 'donation' |
 'subgift_1000' | 'subgift_2000' | 'subgift_3000' | 
 'subgiftb_1000' | 'subgiftb_2000' | 'subgiftb_3000' | 'channelPointRedemption' | 'kofisub' | 'kofidono' | 'kofishop' | 'hypetrain' | 'tts';
 
-export type EventMainType = 'sub' | 'subgift' | 'subgiftb' | 'raid' | 'follow' | 'donation' | 'cheer' | 'channelPointRedemption' | 'kofi' | 'hypetrain' | 'tts';
+export type EventMainType = 'sub' | 'subgift' | 'subgiftb' | 'raid' | 'follow' | 'donation' | 'cheer' | 'channelPointRedemption' | 'kofi' | 'hypetrain' | 'tts' | 'streak';
 
 export type EventAlertRestriction = 'none' | 'mod' | 'system';
 
@@ -34,7 +34,8 @@ export const EventTypeMapping: Record<EventType | EventMainType, EventMainType> 
   'kofishop': 'kofi',
   'kofi': 'kofi',
   'hypetrain': 'hypetrain',
-  'tts': 'tts'
+  'tts': 'tts',
+  'streak': 'streak'
 };
 
 
@@ -144,7 +145,8 @@ export const NEW_ALERTCONFIG: EventAlertConfig = {
             "channelPointRedemption": [],
             "kofi": [],
             "hypetrain": [],
-            "tts": []
+            "tts": [],
+            "streak": []
         },
         files: {},
         config: {

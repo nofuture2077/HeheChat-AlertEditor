@@ -31,10 +31,11 @@ export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }
     "channelPointRedemption": "Channel Points",
     "kofi": "Ko-Fi Integration",
     "hypetrain": "Hypetrain",
-    "tts": "Read Chat"
+    "tts": "Read Chat",
+    "streak": "Watch Streak"
   };
 
-  const mainTypes = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'kofi', 'hypetrain', 'tts'].map(type => ({
+  const mainTypes = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'kofi', 'hypetrain', 'tts', 'streak'].map(type => ({
     value: type,
     label: alertTypes[type]
   }));

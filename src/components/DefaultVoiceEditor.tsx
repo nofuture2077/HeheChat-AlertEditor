@@ -75,7 +75,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                     channelPointRedemption: [],
                     kofi: [],
                     hypetrain: [],
-                    tts: []
+                    tts: [],
+                    streak: []
                 },
                 files: {}
             };
