@@ -40,7 +40,7 @@ export const EventTypeMapping: Record<EventType | EventMainType, EventMainType> 
 
 
 export type EventAlertSpecifier = {
-    type: 'min' | 'exact' | 'matches';
+    type: 'min' | 'exact' | 'mult' | 'matches';
     amount?: number;
     text?: string;
     attribute?: string;
@@ -199,6 +199,7 @@ export function getAlert(event: Event, eventData: any, alertConfig: EventAlertCo
     }
     const exactAlerts: Record<number, EventAlert[]> = {};
     const minAlerts: Record<number, EventAlert[]> = {};
+    const multAlerts: Record<number, EventAlert[]> = {};
     const matchesAlerts: EventAlert[] = [];
 
     alerts.forEach(alert => {
@@ -217,6 +218,13 @@ export function getAlert(event: Event, eventData: any, alertConfig: EventAlertCo
                 minAlerts[amount] = [alert];
             }
         }
+        if (alert.specifier.type === "mult") {
+            if (multAlerts[amount]) {
+                multAlerts[amount].push(alert)
+            } else {
+                multAlerts[amount] = [alert];
+            }
+        }
         if (alert.specifier.type === "matches" && alert.specifier.text && 
             alert.specifier.attribute && (eventData[alert.specifier.attribute] === alert.specifier.text)) {
                 matchesAlerts.push(alert);
@@ -229,6 +237,11 @@ export function getAlert(event: Event, eventData: any, alertConfig: EventAlertCo
     }
     if (matchesAlerts.length) {
         return _.sample(matchesAlerts);
+    }
+    const matchedMult = Object.keys(multAlerts).map(x => Number(x)).filter(x => x > 0 && eventAmount % x === 0).sort((a, b) => a - b);
+    if (matchedMult.length) {
+        const highestMult = matchedMult[matchedMult.length - 1];
+        return _.sample(multAlerts[highestMult]);
     }
     const minKeys: number[] = Object.keys(minAlerts).map(x => Number(x)).sort((a, b) => a - b);
     const step = [...minKeys].reverse().find((x: number) => x <= eventAmount);

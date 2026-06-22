@@ -161,7 +161,7 @@ export function AlertView(props: {
     const [layout, setLayout] = useState<string[]>((props.data?.visual?.layout || "").split(' ').filter(Boolean));
     const [position, setPosition] = useState<string[]>((props.data?.visual?.position || "").split(' ').filter(Boolean));
     const [type] = useState<EventMainType>(props.type);
-    const [specType, setSpecType] = useState<'min' | 'exact' | 'matches'>(props.data?.specifier.type || 'min');
+    const [specType, setSpecType] = useState<'min' | 'exact' | 'mult' | 'matches'>(props.data?.specifier.type || 'min');
     const [specAmount, setSpecAmount] = useState<number>(props.data?.specifier.amount || 0);
     const [specText, setSpecText] = useState<string>(props.data?.specifier.text || '');
     const [specAttribute, setSpecAttribute] = useState<string | undefined>(props.data?.specifier.attribute || '');
@@ -216,7 +216,7 @@ export function AlertView(props: {
         return 'de-DE'; // Default to German
     });
     
-    const nummberSpecType = specType === 'min' || specType === 'exact';
+    const nummberSpecType = specType === 'min' || specType === 'exact' || specType === 'mult';
 
     const InfoText = "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
     const voiceTypes = config.aiVoices.length ? ['default', 'ai', 'google', 'none'] : ['default', 'google', 'none'];
@@ -232,7 +232,7 @@ export function AlertView(props: {
 
                     <Fieldset legend="Trigger">
                         <Stack>
-                            <Select label="Type" data={['min', 'exact', 'matches']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' | 'matches' || specType)} />
+                            <Select label="Type" data={['min', 'exact', 'mult', 'matches']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' | 'mult' | 'matches' || specType)} />
                             {nummberSpecType ? <NumberInput label="Amount" value={specAmount} onChange={(val) => setSpecAmount(Number(val))} /> : 
                             <>
                                 <Select label="Attribute" value={specAttribute} data={['rewardTitle', 'username', 'type', 'eventType']} onChange={(value) => setSpecAttribute(value || undefined)} />
@@ -852,6 +852,7 @@ export function AlertConfigurator(props: NavigationProps) {
         switch (alert.specifier.type) {
             case 'min': return alert.specifier.amount + "+" + suffix;
             case 'exact': return alert.specifier.amount + suffix;
+            case 'mult': return alert.specifier.amount + suffix;
             case 'matches': return alert.specifier.attribute +  ": " + alert.specifier.text;
         }
     }
