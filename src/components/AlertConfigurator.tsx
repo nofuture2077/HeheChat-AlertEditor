@@ -4,7 +4,7 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, readFile, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
@@ -698,6 +698,172 @@ export function UploadFileView(props: {
 }
 
 
+export function ReplaceFileView(props: {
+    title: string;
+    existingFile: Base64File;
+    close: () => void;
+    confirm: (date: Base64File) => void;
+}) {
+    // Keep the same id as the existing file: every alert that references this
+    // file by id (audio.jingle / visual.element) keeps working with no
+    // additional reference-rewriting needed.
+    const id = props.existingFile.id;
+    const [name, setName] = useState(props.existingFile.name);
+    const [mime, setMime] = useState("");
+    const [data, setData] = useState("");
+    const [type, setType] = useState<'audio' | 'image' | 'video' | 'application/zip'>(props.existingFile.type);
+    const [fileSize, setFileSize] = useState<number>(0);
+    const [fileSizeWarning, setFileSizeWarning] = useState<boolean>(false);
+    const [fileSizeError, setFileSizeError] = useState<boolean>(false);
+    const [nameError, setNameError] = useState<string | null>(null);
+    const appContext = useContext<AppContextProps>(AppContext);
+
+    // Calculate current config size
+    const calculateCurrentConfigSize = () => {
+        const configString = JSON.stringify(appContext.alertConfig);
+        return new Blob([configString]).size;
+    };
+
+    // The old file's bytes are being removed and the new file's bytes added
+    const getOldFileSize = () => {
+        return props.existingFile.data ? Math.round(props.existingFile.data.length * 0.75) : 0;
+    };
+
+    // Calculate the estimated new config size after replacing this file
+    const calculateEstimatedNewSize = () => {
+        return calculateCurrentConfigSize() - getOldFileSize() + fileSize;
+    };
+
+    // Check if filename is unique (excluding the file being replaced)
+    const isFilenameUnique = (filename: string): boolean => {
+        return !Object.values(appContext.alertConfig.data?.files || {}).some(
+            file => file.id !== id && file.name === filename
+        );
+    };
+
+    // Validate filename when it changes
+    const validateFilename = (filename: string) => {
+        if (!filename) {
+            setNameError("Filename cannot be empty");
+            return false;
+        }
+
+        if (!isFilenameUnique(filename)) {
+            setNameError("Filename must be unique. Please choose a different name.");
+            return false;
+        }
+
+        setNameError(null);
+        return true;
+    };
+
+    const onSelect = function (file: File) {
+        // Check file size - individual files over 20MB will trigger a warning
+        const fileSizeMB = file.size / (1024 * 1024);
+        setFileSize(file.size);
+
+        // Check if replacing with this file would push the config over limits
+        const oldFileSizeMB = getOldFileSize() / (1024 * 1024);
+        const currentSizeMB = calculateCurrentConfigSize() / (1024 * 1024);
+        const estimatedNewSizeMB = currentSizeMB - oldFileSizeMB + fileSizeMB;
+
+        if (estimatedNewSizeMB >= 100) {
+            setFileSizeError(true);
+            return;
+        } else {
+            setFileSizeError(false);
+            if (fileSizeMB >= 20 || estimatedNewSizeMB >= 50) {
+                setFileSizeWarning(true);
+            } else {
+                setFileSizeWarning(false);
+            }
+        }
+
+        setMime(file.type);
+        if (file.type.startsWith('audio')) {
+            setType('audio');
+        } else if (file.type.startsWith('video')) {
+            setType('video');
+        } else if (file.type === 'application/zip') {
+            setType('application/zip');
+        } else {
+            setType('image');
+        }
+        readFile(file).then((data: string) => {
+            setData(data.split(',')[1]);
+        });
+    }
+
+    return (
+        <Modal key="replace-file-view" opened={true} onClose={props.close} withCloseButton={false}>
+            <Fieldset legend={props.title}>
+                <Text size="sm" mb="xs" c="dimmed">
+                    Replacing "{props.existingFile.name}" — every alert currently using this file will automatically use the new content.
+                </Text>
+                <DropZone onSelect={onSelect}></DropZone>
+                <TextInput label="Id" value={id} readOnly disabled style={{ display: 'none' }}></TextInput>
+                <TextInput label="Type" value={mime || props.existingFile.mime} readOnly disabled></TextInput>
+                <TextInput
+                    label="Name"
+                    value={name}
+                    onChange={(ev) => {
+                        setName(ev.target.value);
+                        validateFilename(ev.target.value);
+                    }}
+                    error={nameError}
+                    required
+                ></TextInput>
+
+                {fileSize > 0 && (
+                    <Group mt="xs">
+                        <Text size="sm">New file size: {formatFileSize(fileSize)}</Text>
+                        {fileSizeWarning && !fileSizeError && (
+                            <Badge color="yellow">Large file</Badge>
+                        )}
+                    </Group>
+                )}
+
+                {fileSizeWarning && !fileSizeError && (
+                    <Alert
+                        color="yellow"
+                        title="Large File Warning"
+                        icon={<IconAlertTriangle size={16} />}
+                        mt="sm"
+                    >
+                        This file is large ({formatFileSize(fileSize)}). After replacing, your config will be approximately {formatFileSize(calculateEstimatedNewSize())}.
+                        {calculateEstimatedNewSize() / (1024 * 1024) >= 50 && (
+                            <Text mt="xs">This will exceed the 50MB warning threshold.</Text>
+                        )}
+                    </Alert>
+                )}
+
+                {fileSizeError && (
+                    <Alert
+                        color="red"
+                        title="File Too Large"
+                        icon={<IconAlertTriangle size={16} />}
+                        mt="sm"
+                    >
+                        Replacing with this file would make your config exceed the 100MB limit. Please use a smaller file or optimize this one.
+                    </Alert>
+                )}
+
+                <Group justify="space-around" mt="md">
+                    <Button onClick={props.close}>Cancel</Button>
+                    <Button
+                        variant="filled"
+                        color="pink"
+                        onClick={() => props.confirm({ id, name, mime: mime || props.existingFile.mime, type, data })}
+                        disabled={fileSizeError || !data || !!nameError || !name}
+                    >
+                        Replace
+                    </Button>
+                </Group>
+            </Fieldset>
+        </Modal>);
+}
+
+
 export function AlertConfigurator(props: NavigationProps) {
     const appContext = useContext<AppContextProps>(AppContext);
     const [confirmDeleteOpen, confirmDeleteHandler] = useDisclosure(false);
@@ -804,6 +970,16 @@ export function AlertConfigurator(props: NavigationProps) {
         setConfirmDeleteComponent(undefined);
     }
 
+    // Replace a file's content/name while keeping its id, so every alert
+    // reference (audio.jingle / visual.element) stays valid automatically.
+    const replaceFile = function (data: Base64File) {
+        const config = appContext.alertConfig;
+        config.data!.files[data.id] = data;
+        appContext.setAlertConfig(config);
+        confirmDeleteHandler.close();
+        setConfirmDeleteComponent(undefined);
+    }
+
     const deleteAlert = function (alertId: string) {
         const config = appContext.alertConfig;
         Object.keys(config.data!.alerts).forEach((evType) => {
@@ -826,6 +1002,11 @@ export function AlertConfigurator(props: NavigationProps) {
 
     function uploadFileView(title: string, confirm: (data: Base64File) => void) {
         setConfirmDeleteComponent(<UploadFileView title={title} close={confirmDeleteHandler.close} confirm={confirm} />);
+        confirmDeleteHandler.open();
+    }
+
+    function replaceFileView(existingFile: Base64File, confirm: (data: Base64File) => void) {
+        setConfirmDeleteComponent(<ReplaceFileView title={'Replace File: ' + existingFile.name} existingFile={existingFile} close={confirmDeleteHandler.close} confirm={confirm} />);
         confirmDeleteHandler.open();
     }
 
@@ -974,13 +1155,22 @@ export function AlertConfigurator(props: NavigationProps) {
                 handlePreviewOpen(file);
             }}
             rightSection={
-                <ActionIcon variant='subtle' onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    confirmDeleteAlert("Are you sure to delete File: \"" + file.name + "\"?", () => deleteFile(file.id));
-                }}>
-                    <IconTrash />
-                </ActionIcon>
+                <Group gap={0}>
+                    <ActionIcon variant='subtle' onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        replaceFileView(file, replaceFile);
+                    }} title="Replace File">
+                        <IconRefresh />
+                    </ActionIcon>
+                    <ActionIcon variant='subtle' onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        confirmDeleteAlert("Are you sure to delete File: \"" + file.name + "\"?", () => deleteFile(file.id));
+                    }}>
+                        <IconTrash />
+                    </ActionIcon>
+                </Group>
             } 
             key={file.id} 
             label={file.name}
