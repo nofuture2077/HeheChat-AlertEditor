@@ -6,9 +6,10 @@ import {
     Button, 
     Select, 
     Stack, 
-    Text, 
+    Text,
     Alert,
-    ActionIcon
+    ActionIcon,
+    Slider
 } from '@mantine/core';
 import { IconAlertCircle, IconMusic } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
@@ -26,7 +27,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
     const currentDefaultVoice = appContext.alertConfig.data?.config?.defaultVoice;
     const [voiceType, setVoiceType] = useState<'ai' | 'google'>(currentDefaultVoice?.voiceType || 'google');
     const [voice, setVoice] = useState<string>(currentDefaultVoice?.voiceSpecifier || '');
-    
+    const [speed, setSpeed] = useState<number>(Number(currentDefaultVoice?.voiceParams?.speed) || 1.0);
+
     // Initialize selectedLanguage based on the existing voice if available
     const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
         if (currentDefaultVoice?.voiceType === 'google' && currentDefaultVoice?.voiceSpecifier) {
@@ -47,7 +49,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
             if (currentDefaultVoice) {
                 setVoiceType(currentDefaultVoice.voiceType || 'google');
                 setVoice(currentDefaultVoice.voiceSpecifier || '');
-                
+                setSpeed(Number(currentDefaultVoice.voiceParams?.speed) || 1.0);
+
                 if (currentDefaultVoice.voiceType === 'google' && currentDefaultVoice.voiceSpecifier) {
                     const voiceData = appContext.googleVoices.find(v => v.name === currentDefaultVoice.voiceSpecifier);
                     if (voiceData && voiceData.languageCodes.length > 0) {
@@ -90,7 +93,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
         config.data.config.defaultVoice = {
             voiceType,
             voiceSpecifier: voice,
-            voiceParams: {}
+            voiceParams: { speed }
         };
 
         appContext.setAlertConfig(config);
@@ -102,7 +105,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
         const currentDefaultVoice = appContext.alertConfig.data?.config?.defaultVoice;
         setVoiceType(currentDefaultVoice?.voiceType || 'google');
         setVoice(currentDefaultVoice?.voiceSpecifier || '');
-        
+        setSpeed(Number(currentDefaultVoice?.voiceParams?.speed) || 1.0);
+
         if (currentDefaultVoice?.voiceType === 'google' && currentDefaultVoice?.voiceSpecifier) {
             const voiceData = appContext.googleVoices.find(v => v.name === currentDefaultVoice?.voiceSpecifier);
             if (voiceData && voiceData.languageCodes.length > 0) {
@@ -122,7 +126,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
             voice,
             appContext.alertConfig.meta.channel,
             appContext.sink || '',
-            undefined // No need to pass defaultVoice since we're previewing the voice directly
+            undefined, // No need to pass defaultVoice since we're previewing the voice directly
+            speed
         );
     };
 
@@ -256,11 +261,28 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                             </>
                         )}
                         
+                        <Text size="sm" fw={500}>Speed</Text>
+                        <Slider
+                            value={speed}
+                            onChange={(value) => setSpeed(value)}
+                            min={0.5}
+                            max={2.0}
+                            step={0.1}
+                            label={(value) => value.toFixed(1)}
+                            marks={[
+                                { value: 0.5, label: '0.5x' },
+                                { value: 1.0, label: '1.0x' },
+                                { value: 1.5, label: '1.5x' },
+                                { value: 2.0, label: '2.0x' }
+                            ]}
+                            mb="md"
+                        />
+
                         {voice && (
                             <Group justify="center">
-                                <ActionIcon 
-                                    variant="filled" 
-                                    color="blue" 
+                                <ActionIcon
+                                    variant="filled"
+                                    color="blue"
                                     size="lg"
                                     title="Preview Default Voice"
                                     onClick={handlePreviewTTS}

@@ -1,6 +1,6 @@
 import { useContext, ReactElement, useState, useMemo } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
@@ -203,7 +203,8 @@ export function AlertView(props: {
         props.close();
     };
     const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
-    
+    const [speed, setSpeed] = useState<number>(Number(props.data?.audio?.tts?.voiceParams?.speed) || 1.0);
+
     // Initialize selectedLanguage based on the existing voice if available
     const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
         if (props.data?.audio?.tts?.voiceType === 'google' && props.data?.audio?.tts?.voiceSpecifier) {
@@ -397,8 +398,24 @@ export function AlertView(props: {
                             ) : null}
                             {voiceType === 'none' ? null : (
                                 <>
+                                    <Text size="sm" fw={500}>Speed</Text>
+                                    <Slider
+                                        value={speed}
+                                        onChange={(value) => setSpeed(value)}
+                                        min={0.5}
+                                        max={2.0}
+                                        step={0.1}
+                                        label={(value) => value.toFixed(1)}
+                                        marks={[
+                                            { value: 0.5, label: '0.5x' },
+                                            { value: 1.0, label: '1.0x' },
+                                            { value: 1.5, label: '1.5x' },
+                                            { value: 2.0, label: '2.0x' }
+                                        ]}
+                                        mb="md"
+                                    />
                                     <Group align="flex-start">
-                                        <Textarea 
+                                        <Textarea
                                             style={{ flex: 1 }}
                                             autosize 
                                             minRows={1} 
@@ -419,7 +436,8 @@ export function AlertView(props: {
                                                 voice,
                                                 appContext.alertConfig.meta.channel,
                                                 appContext.sink || '',
-                                                appContext.alertConfig.data?.config?.defaultVoice
+                                                appContext.alertConfig.data?.config?.defaultVoice,
+                                                speed
                                             )}
                                         >
                                             <IconMusic size={18} />
@@ -486,9 +504,9 @@ export function AlertView(props: {
                                     tts: (ttsText && voiceType !== 'none') ? { 
                                         text: ttsText, 
                                         voiceType, 
-                                        voiceSpecifier: voice, 
-                                        voiceParams: {} 
-                                    } : undefined 
+                                        voiceSpecifier: voice,
+                                        voiceParams: { speed }
+                                    } : undefined
                                 } 
                             };
                             
@@ -912,7 +930,7 @@ export function AlertConfigurator(props: NavigationProps) {
                     tts: {
                         voiceType: 'default',
                         voiceSpecifier: '',
-                        voiceParams: {},
+                        voiceParams: { speed: 1.0 },
                         text: '${username}: ${text}'
                     }
                 }

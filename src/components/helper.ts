@@ -88,7 +88,8 @@ export async function previewTTS(
     voice: string, 
     channel: string, 
     sink: string,
-    defaultVoice?: { voiceType: 'ai' | 'google'; voiceSpecifier: string; voiceParams: Record<string, string | number> }
+    defaultVoice?: { voiceType: 'ai' | 'google'; voiceSpecifier: string; voiceParams: Record<string, string | number> },
+    speed?: number
 ): Promise<void> {
     // Handle default voice type
     let actualVoiceType = voiceType;
@@ -137,7 +138,8 @@ export async function previewTTS(
         
         // Create and play audio element
         const audio = new Audio("data:audio/mp3;base64," + audioBlob.audioContent);
-        
+        audio.playbackRate = speed ?? 1.0;
+
         // Play the audio
         await audio.play();
     } catch (error) {
