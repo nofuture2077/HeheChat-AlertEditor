@@ -398,22 +398,26 @@ export function AlertView(props: {
                             ) : null}
                             {voiceType === 'none' ? null : (
                                 <>
-                                    <Text size="sm" fw={500}>Speed</Text>
-                                    <Slider
-                                        value={speed}
-                                        onChange={(value) => setSpeed(value)}
-                                        min={0.5}
-                                        max={2.0}
-                                        step={0.1}
-                                        label={(value) => value.toFixed(1)}
-                                        marks={[
-                                            { value: 0.5, label: '0.5x' },
-                                            { value: 1.0, label: '1.0x' },
-                                            { value: 1.5, label: '1.5x' },
-                                            { value: 2.0, label: '2.0x' }
-                                        ]}
-                                        mb="md"
-                                    />
+                                    {voiceType !== 'default' && (
+                                        <>
+                                            <Text size="sm" fw={500}>Speed</Text>
+                                            <Slider
+                                                value={speed}
+                                                onChange={(value) => setSpeed(value)}
+                                                min={0.5}
+                                                max={2.0}
+                                                step={0.1}
+                                                label={(value) => value.toFixed(1)}
+                                                marks={[
+                                                    { value: 0.5, label: '0.5x' },
+                                                    { value: 1.0, label: '1.0x' },
+                                                    { value: 1.5, label: '1.5x' },
+                                                    { value: 2.0, label: '2.0x' }
+                                                ]}
+                                                mb="md"
+                                            />
+                                        </>
+                                    )}
                                     <Group align="flex-start">
                                         <Textarea
                                             style={{ flex: 1 }}
@@ -437,7 +441,9 @@ export function AlertView(props: {
                                                 appContext.alertConfig.meta.channel,
                                                 appContext.sink || '',
                                                 appContext.alertConfig.data?.config?.defaultVoice,
-                                                speed
+                                                voiceType === 'default'
+                                                    ? Number(appContext.alertConfig.data?.config?.defaultVoice?.voiceParams?.speed) || 1.0
+                                                    : speed
                                             )}
                                         >
                                             <IconMusic size={18} />
@@ -505,9 +511,9 @@ export function AlertView(props: {
                                         text: ttsText, 
                                         voiceType, 
                                         voiceSpecifier: voice,
-                                        voiceParams: { speed }
+                                        voiceParams: (voiceType === 'default' ? {} : { speed }) as Record<string, string | number>
                                     } : undefined
-                                } 
+                                }
                             };
                             
                             props.confirm(alertData);
@@ -930,7 +936,7 @@ export function AlertConfigurator(props: NavigationProps) {
                     tts: {
                         voiceType: 'default',
                         voiceSpecifier: '',
-                        voiceParams: { speed: 1.0 },
+                        voiceParams: {},
                         text: '${username}: ${text}'
                     }
                 }
