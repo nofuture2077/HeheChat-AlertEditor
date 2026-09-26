@@ -27,6 +27,7 @@ export type PlannedAlert = {
 export type ConversionPlan = {
     channel: string;
     name: string;
+    overlays: string[];
     alerts: PlannedAlert[];
     media: MediaJob[];
     skipped: string[];
@@ -157,7 +158,7 @@ function mediaBaseName(url: string, eventKey: string, alertName: string, origina
     return `${eventKey}_${sanitizeName(candidate) || 'alert'}`;
 }
 
-export function planConversion(se: SEExport): ConversionPlan {
+export function planConversion(exports: SEExport[]): ConversionPlan {
     const alerts: PlannedAlert[] = [];
     const mediaByUrl = new Map<string, MediaJob>();
     const skipped = new Set<string>();
@@ -213,55 +214,60 @@ export function planConversion(se: SEExport): ConversionPlan {
         alerts.push({ mainType: EventTypeMapping[type], alert });
     };
 
-    const widgets = se.overlay.widgets.filter(w => w.type === ALERT_BOX_WIDGET && w.visible !== false);
-    for (const widget of widgets) {
-        const widgetPrefix = widgets.length > 1 && widget.name ? `${widget.name} / ` : '';
-        const box = widgetBox(widget, se.overlay.settings);
-        for (const [eventKey, value] of Object.entries(widget.variables)) {
-            const event = value as SEEvent;
-            if (!event || typeof event !== 'object' || !('variations' in event || 'text' in event)) continue;
-            // The widget only shows events it listens to, the others keep their enabled defaults
-            if (widget.listeners && !widget.listeners[`${eventKey}-latest`]) continue;
-            const config = SE_EVENTS[eventKey];
-            if (!config) {
-                if (event.enabled) skipped.add(`${eventKey} (not supported by HeheChat)`);
-                continue;
-            }
-
-            if (event.enabled) {
-                addAlert(eventKey, config.type, config.label, event, mapSpecifier(undefined, event.minAmount), baseVariables, widgetPrefix, box);
-            }
-
-            for (const variation of event.variations || []) {
-                if (variation.enabled === false || !variation.settings) continue;
-                const type = mapVariationType(eventKey, variation);
-                if (!type) {
-                    skipped.add(`${eventKey} variation "${variation.name}" (tier 1 is covered by the generic sub alert)`);
+    for (const se of exports) {
+        const widgets = se.overlay.widgets.filter(w => w.type === ALERT_BOX_WIDGET && w.visible !== false);
+        for (const widget of widgets) {
+            const prefixParts = [exports.length > 1 && se.overlay.name, widgets.length > 1 && widget.name].filter(Boolean);
+            const widgetPrefix = prefixParts.length ? `${prefixParts.join(' / ')} / ` : '';
+            const box = widgetBox(widget, se.overlay.settings);
+            for (const [eventKey, value] of Object.entries(widget.variables)) {
+                const event = value as SEEvent;
+                if (!event || typeof event !== 'object' || !('variations' in event || 'text' in event)) continue;
+                // The widget only shows events it listens to, the others keep their enabled defaults
+                if (widget.listeners && !widget.listeners[`${eventKey}-latest`]) continue;
+                const config = SE_EVENTS[eventKey];
+                if (!config) {
+                    if (event.enabled) skipped.add(`${eventKey} (not supported by HeheChat)`);
                     continue;
                 }
-                const variables = variation.type === 'gift' ? giftVariables : baseVariables;
-                if (variation.type === 'name') {
-                    const usernames = String(variation.requirement || '').split(',').map(x => x.trim()).filter(Boolean);
-                    for (const username of usernames) {
-                        addAlert(eventKey, type, `${variation.name} (${username})`, variation.settings,
-                            { type: 'matches', attribute: 'username', text: username }, variables, widgetPrefix, box, event, variation.type);
+
+                if (event.enabled) {
+                    addAlert(eventKey, config.type, config.label, event, mapSpecifier(undefined, event.minAmount), baseVariables, widgetPrefix, box);
+                }
+
+                for (const variation of event.variations || []) {
+                    if (variation.enabled === false || !variation.settings) continue;
+                    const type = mapVariationType(eventKey, variation);
+                    if (!type) {
+                        skipped.add(`${eventKey} variation "${variation.name}" (tier 1 is covered by the generic sub alert)`);
+                        continue;
                     }
-                    continue;
+                    const variables = variation.type === 'gift' ? giftVariables : baseVariables;
+                    if (variation.type === 'name') {
+                        const usernames = String(variation.requirement || '').split(',').map(x => x.trim()).filter(Boolean);
+                        for (const username of usernames) {
+                            addAlert(eventKey, type, `${variation.name} (${username})`, variation.settings,
+                                { type: 'matches', attribute: 'username', text: username }, variables, widgetPrefix, box, event, variation.type);
+                        }
+                        continue;
+                    }
+                    // HeheChat matches tiers on the event type, e.g. eventType = sub_3000
+                    const specifier: EventAlertSpecifier = variation.type === 'tier'
+                        ? { type: 'matches', attribute: 'eventType', text: tierEventType(variation) }
+                        : mapSpecifier(variation);
+                    addAlert(eventKey, type, variation.name || config.label, variation.settings, specifier, variables, widgetPrefix,
+                        box, event, variation.type);
                 }
-                // HeheChat matches tiers on the event type, e.g. eventType = sub_3000
-                const specifier: EventAlertSpecifier = variation.type === 'tier'
-                    ? { type: 'matches', attribute: 'eventType', text: tierEventType(variation) }
-                    : mapSpecifier(variation);
-                addAlert(eventKey, type, variation.name || config.label, variation.settings, specifier, variables, widgetPrefix,
-                    box, event, variation.type);
             }
         }
     }
 
-    const channel = se.channel?.username || '';
+    const channel = exports.find(se => se.channel?.username)?.channel?.username || '';
+    const overlays = exports.map(se => se.overlay.name).filter((name): name is string => !!name);
     return {
         channel,
-        name: se.overlay.name || `${channel} Alerts`,
+        name: (exports.length === 1 && exports[0].overlay.name) || `${channel} Alerts`,
+        overlays,
         alerts,
         media: Array.from(mediaByUrl.values()),
         skipped: Array.from(skipped)

@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Alert, Button, Group, Image, List, PasswordInput, Radio, rem, Stack, Tabs, Text } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Image, List, PasswordInput, rem, Stack, Tabs, Text } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import { IconFileImport, IconInfoCircle, IconPlugConnected, IconX } from '@tabler/icons-react';
 import { loadAlertOverlays, SEOverlay } from './convert/seApi';
 import { isSEExport, SEExport } from './convert/seTypes';
 
 type Props = {
-    onSelect: (seExport: SEExport) => void;
+    onSelect: (exports: SEExport[]) => void;
     onError: (message: string) => void;
 };
 
@@ -15,17 +15,17 @@ function ConnectPanel({ onSelect, onError }: Props) {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState<{ done: number; total: number }>();
     const [overlays, setOverlays] = useState<SEOverlay[]>();
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<string[]>([]);
 
     const load = async () => {
         setLoading(true);
         setOverlays(undefined);
-        setSelected(null);
+        setSelected([]);
         try {
             const found = await loadAlertOverlays(token, (done, total) => setProgress({ done, total }));
             setOverlays(found);
             if (found.length === 1) {
-                onSelect(found[0].export);
+                onSelect([found[0].export]);
             }
         } catch (e) {
             onError((e as Error).message);
@@ -69,13 +69,13 @@ function ConnectPanel({ onSelect, onError }: Props) {
 
             {overlays && overlays.length > 1 && (
                 <Stack gap="xs">
-                    <Text fw={500}>Several overlays contain alert boxes, pick the one you use:</Text>
-                    <Radio.Group value={selected} onChange={setSelected}>
+                    <Text fw={500}>Several overlays contain alert boxes, pick the ones you use:</Text>
+                    <Checkbox.Group value={selected} onChange={setSelected}>
                         <Stack gap="xs">
                             {overlays.map(overlay => (
-                                <Radio.Card key={overlay.id} value={overlay.id} p="sm" radius="md">
+                                <Checkbox.Card key={overlay.id} value={overlay.id} p="sm" radius="md">
                                     <Group wrap="nowrap">
-                                        <Radio.Indicator />
+                                        <Checkbox.Indicator />
                                         {overlay.preview && <Image src={overlay.preview} w={96} h={54} radius="sm" fit="cover" />}
                                         <div>
                                             <Text fw={500}>{overlay.name}</Text>
@@ -85,19 +85,16 @@ function ConnectPanel({ onSelect, onError }: Props) {
                                             </Text>
                                         </div>
                                     </Group>
-                                </Radio.Card>
+                                </Checkbox.Card>
                             ))}
                         </Stack>
-                    </Radio.Group>
+                    </Checkbox.Group>
                     <Group justify="flex-end">
                         <Button
-                            disabled={!selected}
-                            onClick={() => {
-                                const overlay = overlays.find(o => o.id === selected);
-                                if (overlay) onSelect(overlay.export);
-                            }}
+                            disabled={!selected.length}
+                            onClick={() => onSelect(overlays.filter(o => selected.includes(o.id)).map(o => o.export))}
                         >
-                            Use this overlay
+                            {selected.length > 1 ? `Use ${selected.length} overlays` : 'Use this overlay'}
                         </Button>
                     </Group>
                 </Stack>
@@ -107,24 +104,30 @@ function ConnectPanel({ onSelect, onError }: Props) {
 }
 
 function UploadPanel({ onSelect, onError }: Props) {
-    const handleFile = async (file: File) => {
-        try {
-            const json = JSON.parse(await file.text());
-            if (!isSEExport(json)) {
-                onError('This file does not look like a StreamElements overlay export: no Alert Box widget found.');
-                return;
+    const handleFiles = async (files: File[]) => {
+        const exports: SEExport[] = [];
+        const errors: string[] = [];
+        for (const file of files) {
+            try {
+                const json = JSON.parse(await file.text());
+                if (isSEExport(json)) {
+                    exports.push(json);
+                } else {
+                    errors.push(`${file.name} does not look like a StreamElements overlay export: no Alert Box widget found.`);
+                }
+            } catch (e) {
+                errors.push(`Could not read ${file.name}: ${(e as Error).message}`);
             }
-            onSelect(json);
-        } catch (e) {
-            onError(`Could not read file: ${(e as Error).message}`);
         }
+        if (exports.length) onSelect(exports);
+        if (errors.length) onError(errors.join(' '));
     };
 
     return (
         <Dropzone
-            onDrop={(dropped) => dropped[0] && handleFile(dropped[0])}
+            onDrop={(dropped) => dropped.length && handleFiles(dropped)}
             accept={['application/json']}
-            multiple={false}
+            multiple
         >
             <Group justify="center" gap="xl" mih={200} style={{ pointerEvents: 'none' }}>
                 <Dropzone.Accept>
@@ -137,9 +140,9 @@ function UploadPanel({ onSelect, onError }: Props) {
                     <IconFileImport style={{ width: rem(52), height: rem(52), color: 'var(--mantine-color-dimmed)' }} />
                 </Dropzone.Idle>
                 <div>
-                    <Text size="xl" inline>Drop your StreamElements overlay JSON here</Text>
+                    <Text size="xl" inline>Drop your StreamElements overlay JSON files here</Text>
                     <Text size="sm" c="dimmed" inline mt={7} display="block">
-                        The overlay bootstrap response from the StreamElements API, or click to select the file
+                        The overlay bootstrap response from the StreamElements API, or click to select one or more files
                     </Text>
                 </div>
             </Group>

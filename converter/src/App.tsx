@@ -67,8 +67,8 @@ function Summary({ plan }: { plan: ConversionPlan }) {
                         <Text fw={500}>{plan.channel || '–'}</Text>
                     </div>
                     <div>
-                        <Text size="sm" c="dimmed">Overlay</Text>
-                        <Text fw={500}>{plan.name}</Text>
+                        <Text size="sm" c="dimmed">{plan.overlays.length > 1 ? 'Overlays' : 'Overlay'}</Text>
+                        <Text fw={500}>{plan.overlays.length > 1 ? plan.overlays.join(', ') : plan.name}</Text>
                     </div>
                 </SimpleGrid>
                 <Table>
@@ -152,9 +152,9 @@ export default function App() {
         setError(undefined);
     };
 
-    const handleExport = (seExport: SEExport) => {
+    const handleExport = (exports: SEExport[]) => {
         setError(undefined);
-        setPlan(planConversion(seExport));
+        setPlan(planConversion(exports));
         setPhase('ready');
     };
 
@@ -198,7 +198,7 @@ export default function App() {
                         <div>
                             <Title order={2}>StreamElements → HeheChat</Title>
                             <Text c="dimmed">
-                                Converts your StreamElements alert box into a HeheChat alert config. All images, videos and sounds
+                                Converts your StreamElements alert boxes into a HeheChat alert config. All images, videos and sounds
                                 are downloaded and converted right in your browser, nothing is uploaded.
                             </Text>
                         </div>
@@ -215,7 +215,7 @@ export default function App() {
 
                         {phase === 'ready' && (
                             <Group justify="space-between">
-                                <Button variant="outline" onClick={reset}>Choose another overlay</Button>
+                                <Button variant="outline" onClick={reset}>Choose other overlays</Button>
                                 <Button onClick={startConversion} disabled={!plan?.alerts.length}>Convert</Button>
                             </Group>
                         )}
