@@ -1,7 +1,22 @@
 // Subset of the StreamElements overlay export that the converter reads.
 
+export type SETextCss = {
+    'font-family'?: string;
+    'font-size'?: number | string;
+    'text-align'?: string;
+    color?: string;
+    highlights?: { color?: string };
+    message?: {
+        'font-family'?: string;
+        'font-size'?: number | string;
+        color?: string;
+    };
+};
+
 export type SEText = {
     message: string;
+    animation?: string;
+    css?: SETextCss;
 };
 
 export type SEGraphics = {
@@ -30,6 +45,7 @@ export type SEAlertSettings = {
     graphics?: SEGraphics;
     audio?: SEAudio;
     tts?: SETTS;
+    showMessage?: boolean;
 };
 
 export type SEVariation = {
@@ -50,12 +66,21 @@ export type SEWidget = {
     type: string;
     name?: string | null;
     visible?: boolean;
+    listeners?: Record<string, boolean>;
+    css?: {
+        top?: number | string;
+        left?: number | string;
+        width?: number | string;
+        height?: number | string;
+    };
+    text?: { css?: SETextCss };
     variables: Record<string, SEEvent | unknown>;
 };
 
 export type SEExport = {
     overlay: {
         name?: string;
+        settings?: { width?: number; height?: number };
         widgets: SEWidget[];
     };
     channel?: {
