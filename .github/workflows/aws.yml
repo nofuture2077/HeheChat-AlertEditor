@@ -47,4 +47,4 @@ jobs:
           # Transfer editor files with rsync
           rsync -avz --delete ./dist "${AWS_SSH_USER}@${AWS_SSH_HOST}:${AWS_SSH_PATH}"
           # Transfer converter files with rsync
-          rsync -avz --delete ./dist-converter "${AWS_SSH_USER}@${AWS_SSH_HOST}:${AWS_SSH_PATH}/converter"
+          rsync -avz --delete ./converter/dist "${AWS_SSH_USER}@${AWS_SSH_HOST}:${AWS_SSH_PATH}/converter"
