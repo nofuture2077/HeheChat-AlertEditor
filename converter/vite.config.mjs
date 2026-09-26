@@ -15,7 +15,7 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    outDir: path.resolve(root, '../dist-converter'),
+    outDir: 'dist',
     emptyOutDir: true
   }
 });
