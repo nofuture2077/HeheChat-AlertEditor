@@ -10,7 +10,8 @@ import {
     Text, 
     Alert,
     ScrollArea,
-    Divider
+    Divider,
+    Tooltip
 } from '@mantine/core';
 import { IconTrash, IconPlus, IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
@@ -143,14 +144,17 @@ export function TTSReplacementsEditor({ opened, onClose }: TTSReplacementsEditor
                                     onChange={(e) => handleValueChange(item.id, e.target.value)}
                                     style={{ flex: 1 }}
                                 />
-                                <ActionIcon
-                                    variant="subtle"
-                                    color="red"
-                                    onClick={() => handleRemoveReplacement(item.id)}
-                                    style={{ alignSelf: index === 0 ? 'flex-end' : 'center' }}
-                                >
-                                    <IconTrash size={16} />
-                                </ActionIcon>
+                                <Tooltip label="Remove rule">
+                                    <ActionIcon
+                                        variant="subtle"
+                                        color="red"
+                                        aria-label="Remove rule"
+                                        onClick={() => handleRemoveReplacement(item.id)}
+                                        style={{ alignSelf: index === 0 ? 'flex-end' : 'center' }}
+                                    >
+                                        <IconTrash size={16} />
+                                    </ActionIcon>
+                                </Tooltip>
                             </Group>
                         ))}
                         

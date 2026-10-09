@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { IconAlertCircle, IconAlertTriangle } from '@tabler/icons-react';
 import { DropZone } from './DropZone';
 import { generateGUID } from './helper';
 import { Base64File, Base64FileReference, EventAlert, EventAlertConfig, EventMainType } from './types';
@@ -100,11 +100,15 @@ export function ImportConfigModal(props: {
             { label: 'Merge', value: 'merge' },
           ]}
         />
-        <Text size="sm" c="dimmed">
-          {mode === 'override'
-            ? 'Replaces the entire current config.'
-            : 'Adds the alerts (and their files) from the uploaded config to your current config.'}
-        </Text>
+        {mode === 'override' ? (
+          <Alert color="yellow" icon={<IconAlertTriangle />} title="Replaces your current config">
+            All current alerts and files are replaced. A backup of your current config is downloaded first.
+          </Alert>
+        ) : (
+          <Text size="sm" c="dimmed">
+            Adds the alerts (and their files) from the uploaded config to your current config.
+          </Text>
+        )}
         {error && (
           <Alert color="red" icon={<IconAlertCircle />}>
             {error}
@@ -114,8 +118,8 @@ export function ImportConfigModal(props: {
           <Button variant="outline" onClick={close}>
             Cancel
           </Button>
-          <Button disabled={!file} onClick={handleImport}>
-            Import
+          <Button disabled={!file} color={mode === 'override' ? 'red' : undefined} onClick={handleImport}>
+            {mode === 'override' ? 'Replace Config' : 'Import'}
           </Button>
         </Group>
       </Stack>

@@ -35,6 +35,10 @@ export default defineConfig({
   esbuild: {
     target: 'es2022'
   },
+  // Pre-bundling breaks the URL of the ffmpeg.wasm worker
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg']
+  },
   base: '#{import.meta.env.VITE_SLUG}',
   test: {
     globals: true,

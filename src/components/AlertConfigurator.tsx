@@ -1,12 +1,13 @@
 import { useContext, ReactElement, useState, useMemo } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
-import { generateGUID, readFile, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
+import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
+import { OptimizedFile, useFileOptimizer } from './useFileOptimizer';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
@@ -84,17 +85,20 @@ const AVAILABLE_CLASSES = {
 
 export function ConfirmDeleteView(props: {
     title: string;
+    warning?: string;
     close: () => void;
     confirm: () => void;
 }) {
     return (
-        <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false}>
-            <Fieldset legend={props.title}>
-                <Group justify="space-around" mt="md">
-                    <Button onClick={props.close}>Cancel</Button>
-                    <Button variant="filled" color="pink" onClick={props.confirm}>Delete</Button>
-                </Group>
-            </Fieldset>
+        <Modal key="confirm-delete-view" opened={true} onClose={props.close} title="Please confirm">
+            <Text>{props.title}</Text>
+            {props.warning && (
+                <Alert color="yellow" icon={<IconAlertTriangle size={16} />} mt="sm">{props.warning}</Alert>
+            )}
+            <Group justify="flex-end" mt="lg">
+                <Button variant="default" onClick={props.close}>Cancel</Button>
+                <Button variant="filled" color="red" leftSection={<IconTrash size={16} />} onClick={props.confirm}>Delete</Button>
+            </Group>
         </Modal>);
 }
 
@@ -548,6 +552,33 @@ export function AlertView(props: {
 }
 
 
+const formatLabel = (name: string) => name.split('.').pop()?.toUpperCase() || '';
+
+function OptimizeStatus(props: { busy: boolean; progress: number; result: OptimizedFile | null; error: string | null }) {
+    if (props.busy) {
+        return (
+            <Stack gap={4} mt="xs">
+                <Text size="sm">Optimizing file…</Text>
+                <Progress value={props.progress * 100} size="sm" animated />
+            </Stack>
+        );
+    }
+    if (props.error) {
+        return <Alert color="red" title="Unsupported File" icon={<IconAlertTriangle size={16} />} mt="sm">{props.error}</Alert>;
+    }
+    if (props.result?.warning) {
+        return <Alert color="yellow" title="Not Optimized" icon={<IconAlertTriangle size={16} />} mt="sm">{props.result.warning}</Alert>;
+    }
+    if (props.result?.converted) {
+        return (
+            <Text size="sm" c="dimmed" mt="xs">
+                Converted {formatLabel(props.result.originalName)} {formatFileSize(props.result.originalSize)} → {formatLabel(props.result.name)} {formatFileSize(props.result.size)}
+            </Text>
+        );
+    }
+    return null;
+}
+
 export function UploadFileView(props: {
     title: string;
     close: () => void;
@@ -562,6 +593,9 @@ export function UploadFileView(props: {
     const [fileSizeWarning, setFileSizeWarning] = useState<boolean>(false);
     const [fileSizeError, setFileSizeError] = useState<boolean>(false);
     const [nameError, setNameError] = useState<string | null>(null);
+    const [optimized, setOptimized] = useState<OptimizedFile | null>(null);
+    const [optimizeError, setOptimizeError] = useState<string | null>(null);
+    const { optimize, busy, progress } = useFileOptimizer();
     const appContext = useContext<AppContextProps>(AppContext);
 
     // Calculate current config size
@@ -622,10 +656,22 @@ export function UploadFileView(props: {
         return true;
     };
 
-    const onSelect = function (file: File) {
+    const onSelect = async function (file: File) {
+        setData("");
+        setOptimized(null);
+        setOptimizeError(null);
+        let result: OptimizedFile;
+        try {
+            result = await optimize(file);
+        } catch (error) {
+            setOptimizeError(error instanceof Error ? error.message : String(error));
+            return;
+        }
+        setOptimized(result);
+
         // Check file size - individual files over 20MB will trigger a warning
-        const fileSizeMB = file.size / (1024 * 1024);
-        setFileSize(file.size);
+        const fileSizeMB = result.size / (1024 * 1024);
+        setFileSize(result.size);
         
         // Check if adding this file would push the config over limits
         const currentSizeMB = calculateCurrentConfigSize() / (1024 * 1024);
@@ -634,31 +680,24 @@ export function UploadFileView(props: {
         if (estimatedNewSizeMB >= 100) {
             setFileSizeError(true);
             return;
-        } else if (fileSizeMB >= 20 || estimatedNewSizeMB >= 50) {
-            setFileSizeWarning(true);
+        } else {
+            setFileSizeError(false);
+            setFileSizeWarning(fileSizeMB >= 20 || estimatedNewSizeMB >= 50);
         }
         
         // Generate a unique filename
-        const uniqueFilename = generateUniqueFilename(file.name);
+        const uniqueFilename = generateUniqueFilename(result.name);
         setName(uniqueFilename);
-        setMime(file.type);
-        if (file.type.startsWith('audio')) {
-            setType('audio');
-        } else if (file.type.startsWith('video')) {
-            setType('video');
-        } else if (file.type === 'application/zip') {
-            setType('application/zip');
-        } else {
-            setType('image');
-        }
-        readFile(file).then((data: string) => {
-            setData(data.split(',')[1]);
-        });
+        validateFilename(uniqueFilename);
+        setMime(result.mime);
+        setType(result.type);
+        setData(result.data);
     }
     return (
         <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false}>
             <Fieldset legend={props.title}>
                 <DropZone onSelect={onSelect}></DropZone>
+                <OptimizeStatus busy={busy} progress={progress} result={optimized} error={optimizeError} />
                 <TextInput label="Id" value={id} readOnly disabled></TextInput>
                 <TextInput label="Type" value={mime} readOnly disabled></TextInput>
                 <TextInput 
@@ -712,7 +751,7 @@ export function UploadFileView(props: {
                         variant="filled" 
                         color="pink" 
                         onClick={() => props.confirm({ id, name, mime, type, data })}
-                        disabled={fileSizeError || !data || !!nameError || !name}
+                        disabled={busy || fileSizeError || !data || !!nameError || !name}
                     >
                         Upload
                     </Button>
@@ -740,6 +779,9 @@ export function ReplaceFileView(props: {
     const [fileSizeWarning, setFileSizeWarning] = useState<boolean>(false);
     const [fileSizeError, setFileSizeError] = useState<boolean>(false);
     const [nameError, setNameError] = useState<string | null>(null);
+    const [optimized, setOptimized] = useState<OptimizedFile | null>(null);
+    const [optimizeError, setOptimizeError] = useState<string | null>(null);
+    const { optimize, busy, progress } = useFileOptimizer();
     const appContext = useContext<AppContextProps>(AppContext);
 
     // Calculate current config size
@@ -781,10 +823,22 @@ export function ReplaceFileView(props: {
         return true;
     };
 
-    const onSelect = function (file: File) {
+    const onSelect = async function (file: File) {
+        setData("");
+        setOptimized(null);
+        setOptimizeError(null);
+        let result: OptimizedFile;
+        try {
+            result = await optimize(file);
+        } catch (error) {
+            setOptimizeError(error instanceof Error ? error.message : String(error));
+            return;
+        }
+        setOptimized(result);
+
         // Check file size - individual files over 20MB will trigger a warning
-        const fileSizeMB = file.size / (1024 * 1024);
-        setFileSize(file.size);
+        const fileSizeMB = result.size / (1024 * 1024);
+        setFileSize(result.size);
 
         // Check if replacing with this file would push the config over limits
         const oldFileSizeMB = getOldFileSize() / (1024 * 1024);
@@ -803,19 +857,16 @@ export function ReplaceFileView(props: {
             }
         }
 
-        setMime(file.type);
-        if (file.type.startsWith('audio')) {
-            setType('audio');
-        } else if (file.type.startsWith('video')) {
-            setType('video');
-        } else if (file.type === 'application/zip') {
-            setType('application/zip');
-        } else {
-            setType('image');
+        // Keep the existing name but follow the extension of the new file
+        if (result.type !== 'application/zip') {
+            const dot = name.lastIndexOf('.');
+            const newName = `${dot > 0 ? name.substring(0, dot) : name}.${result.name.split('.').pop()}`;
+            setName(newName);
+            validateFilename(newName);
         }
-        readFile(file).then((data: string) => {
-            setData(data.split(',')[1]);
-        });
+        setMime(result.mime);
+        setType(result.type);
+        setData(result.data);
     }
 
     return (
@@ -825,6 +876,7 @@ export function ReplaceFileView(props: {
                     Replacing "{props.existingFile.name}" — every alert currently using this file will automatically use the new content.
                 </Text>
                 <DropZone onSelect={onSelect}></DropZone>
+                <OptimizeStatus busy={busy} progress={progress} result={optimized} error={optimizeError} />
                 <TextInput label="Id" value={id} readOnly disabled style={{ display: 'none' }}></TextInput>
                 <TextInput label="Type" value={mime || props.existingFile.mime} readOnly disabled></TextInput>
                 <TextInput
@@ -878,7 +930,7 @@ export function ReplaceFileView(props: {
                         variant="filled"
                         color="pink"
                         onClick={() => props.confirm({ id, name, mime: mime || props.existingFile.mime, type, data })}
-                        disabled={fileSizeError || !data || !!nameError || !name}
+                        disabled={busy || fileSizeError || !data || !!nameError || !name}
                     >
                         Replace
                     </Button>
@@ -956,8 +1008,7 @@ export function AlertConfigurator(props: NavigationProps) {
         appContext.setAlertConfig(config);
     };
 
-    const setName = async function (name: string) {
-        await ensureConfigStructure();
+    const setName = function (name: string) {
         appContext.alertConfig.meta.name = name;
         appContext.setAlertConfig(appContext.alertConfig);
     }
@@ -1014,8 +1065,8 @@ export function AlertConfigurator(props: NavigationProps) {
         setConfirmDeleteComponent(undefined);
     }
 
-    function confirmDeleteAlert(title: string, confirm: () => void) {
-        setConfirmDeleteComponent(<ConfirmDeleteView title={title} close={confirmDeleteHandler.close} confirm={confirm} />);
+    function confirmDeleteAlert(title: string, confirm: () => void, warning?: string) {
+        setConfirmDeleteComponent(<ConfirmDeleteView title={title} warning={warning} close={confirmDeleteHandler.close} confirm={confirm} />);
         confirmDeleteHandler.open();
     }
 
@@ -1063,7 +1114,15 @@ export function AlertConfigurator(props: NavigationProps) {
     }
 
     const alertNodes = <>{Object.keys(alertTypes).map((ev) => {
-        return <NavLink label={alertTypes[ev]} key={ev} leftSection={icons[ev as EventMainType]}>
+        const alertCount = (appContext.alertConfig.data!.alerts[ev as EventMainType] || []).length;
+        return <NavLink
+            label={alertTypes[ev]}
+            key={ev}
+            leftSection={icons[ev as EventMainType]}
+            rightSection={alertCount > 0 ? <Badge size="sm" variant="light">{alertCount}</Badge> : undefined}
+            disableRightSectionRotation={alertCount > 0}
+            defaultOpened={alertCount > 0}
+        >
             {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => (
               <NavLink 
                 onClick={(e) => {
@@ -1079,20 +1138,24 @@ export function AlertConfigurator(props: NavigationProps) {
                 } 
                 rightSection={
                   <Group gap={0}>
-                    <ActionIcon variant='subtle' onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        cloneAlert(alert);
-                    }}>
-                      <IconPlus />
-                    </ActionIcon>
-                    <ActionIcon variant='subtle' onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        confirmDeleteAlert("Are you sure to delete Alert: \"" + alert.name + "\"?", () => deleteAlert(alert.id));
-                    }}>
-                      <IconTrash />
-                    </ActionIcon>
+                    <Tooltip label="Duplicate alert">
+                      <ActionIcon variant='subtle' aria-label="Duplicate alert" onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          cloneAlert(alert);
+                      }}>
+                        <IconCopy />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Delete alert">
+                      <ActionIcon variant='subtle' color="red" aria-label="Delete alert" onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          confirmDeleteAlert("Delete the alert \"" + alert.name + "\"?", () => deleteAlert(alert.id));
+                      }}>
+                        <IconTrash />
+                      </ActionIcon>
+                    </Tooltip>
                   </Group>
                 } 
                 key={alert.id} 
@@ -1180,20 +1243,30 @@ export function AlertConfigurator(props: NavigationProps) {
             }}
             rightSection={
                 <Group gap={0}>
-                    <ActionIcon variant='subtle' onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        replaceFileView(file, replaceFile);
-                    }} title="Replace File">
-                        <IconRefresh />
-                    </ActionIcon>
-                    <ActionIcon variant='subtle' onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        confirmDeleteAlert("Are you sure to delete File: \"" + file.name + "\"?", () => deleteFile(file.id));
-                    }}>
-                        <IconTrash />
-                    </ActionIcon>
+                    <Tooltip label="Replace file">
+                        <ActionIcon variant='subtle' aria-label="Replace file" onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            replaceFileView(file, replaceFile);
+                        }}>
+                            <IconRefresh />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Delete file">
+                        <ActionIcon variant='subtle' color="red" aria-label="Delete file" onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            confirmDeleteAlert(
+                                "Delete the file \"" + file.name + "\"?",
+                                () => deleteFile(file.id),
+                                usageCount > 0
+                                    ? `This file is used in ${usageCount} alert${usageCount !== 1 ? 's' : ''}. Those alerts will lose this image or sound.`
+                                    : undefined
+                            );
+                        }}>
+                            <IconTrash />
+                        </ActionIcon>
+                    </Tooltip>
                 </Group>
             } 
             key={file.id} 
@@ -1201,6 +1274,20 @@ export function AlertConfigurator(props: NavigationProps) {
             description={`${formatFileSize(fileSize)} • Used in ${usageCount} alert${usageCount !== 1 ? 's' : ''}`}
         />
     })}</>;
+
+    // Stringifying the config including all base64 files is expensive, only do it when the config changes
+    const configSize = useMemo(
+        () => new Blob([JSON.stringify(appContext.alertConfig)]).size,
+        [appContext.alertConfig, appContext.alertConfig.meta.hash]
+    );
+    const sizeInMB = configSize / (1024 * 1024);
+    const sizeStatus = sizeInMB < 20 ? { color: 'green', message: 'Recommended', icon: <IconCheck size={16} /> }
+        : sizeInMB < 50 ? { color: 'blue', message: 'Okay', icon: <IconInfoCircle size={16} /> }
+        : sizeInMB < 100 ? { color: 'yellow', message: 'Warning', icon: <IconAlertTriangle size={16} /> }
+        : { color: 'red', message: 'Error', icon: <IconAlertTriangle size={16} /> };
+    const lastUpdate = appContext.alertConfig.meta.lastUpdate
+        ? new Date(appContext.alertConfig.meta.lastUpdate).toLocaleString()
+        : '';
 
     return <ScrollArea>
         <FilePreviewModal
@@ -1218,74 +1305,65 @@ export function AlertConfigurator(props: NavigationProps) {
             onClose={() => setDefaultVoiceOpened(false)}
         />
         {confirmDeleteOpen ? confirmDeleteComponent : null}
-        <Text>Meta-Information</Text>
-        <TextInput label="Channel" value={appContext.alertConfig.meta.channel} readOnly disabled />
-        <TextInput label="Name" value={appContext.alertConfig.meta.name} onChange={async (ev) => await setName(ev.target.value)} />
-        <TextInput label="GUID" value={appContext.alertConfig.meta.guid} readOnly disabled />
-        <TextInput label="Hash" value={appContext.alertConfig.meta.hash} readOnly disabled />
-        <TextInput label="Last Update" value={appContext.alertConfig.meta.lastUpdate} readOnly disabled />
-        
-        {/* File Size Indicator */}
-        {(() => {
-            const calculateConfigSize = () => {
-                const configString = JSON.stringify(appContext.alertConfig);
-                return new Blob([configString]).size;
-            };
-            
-            const configSize = calculateConfigSize();
-            const sizeInMB = configSize / (1024 * 1024);
-            
-            let color, message, icon;
-            
-            if (sizeInMB < 20) {
-                color = 'green';
-                message = 'Recommended';
-                icon = <IconCheck size={16} />;
-            } else if (sizeInMB >= 20 && sizeInMB < 50) {
-                color = 'blue';
-                message = 'Okay';
-                icon = <IconInfoCircle size={16} />;
-            } else if (sizeInMB >= 50 && sizeInMB < 100) {
-                color = 'yellow';
-                message = 'Warning';
-                icon = <IconAlertTriangle size={16} />;
-            } else {
-                color = 'red';
-                message = 'Error';
-                icon = <IconAlertTriangle size={16} />;
-            }
-            
-            // Calculate percentage for progress bar (100% = 100MB)
-            const percentage = Math.min(sizeInMB, 100);
-            
-            return (
-                <Stack gap="xs" mt="md">
+        <TextInput label="Config Name" value={appContext.alertConfig.meta.name} onChange={(ev) => setName(ev.target.value)} />
+        <Text size="xs" c="dimmed" mt={4}>
+            {lastUpdate && `Last changed ${lastUpdate}`}
+        </Text>
+        <NavLink
+            label={appContext.alertConfig.meta.channel || 'Channel'}
+            description="Config size and IDs"
+            leftSection={<IconInfoCircle />}
+            rightSection={<Badge color={sizeStatus.color} variant="light">{formatFileSize(configSize)}</Badge>}
+            disableRightSectionRotation
+            mt="xs"
+        >
+            <Stack gap="xs" py="xs">
+                <Stack gap="xs">
                     <Group justify="space-between">
                         <Text size="sm" fw={500}>Alert Config Size</Text>
                         <Group gap="xs">
                             <Text size="sm">{formatFileSize(configSize)}</Text>
-                            <Badge color={color} leftSection={icon}>
-                                {message}
+                            <Badge color={sizeStatus.color} leftSection={sizeStatus.icon}>
+                                {sizeStatus.message}
                             </Badge>
                         </Group>
                     </Group>
-                    <Progress 
-                        value={percentage} 
-                        color={color}
-                        size="sm"
-                    />
-                    {sizeInMB >= 50 && (
-                        <Text size="xs" color={color} fs="italic">
-                            {sizeInMB >= 100 
-                                ? "Size exceeds 100MB limit. You won't be able to save until you reduce the size."
-                                : "Size exceeds 50MB warning threshold. Consider optimizing your files."}
-                        </Text>
-                    )}
+                    <Progress value={Math.min(sizeInMB, 100)} color={sizeStatus.color} size="sm" />
                 </Stack>
-            );
-        })()}
+                <TextInput label="Channel" value={appContext.alertConfig.meta.channel} readOnly disabled />
+                <TextInput label="GUID" value={appContext.alertConfig.meta.guid} readOnly disabled />
+                <TextInput label="Hash" value={appContext.alertConfig.meta.hash} readOnly disabled />
+                <TextInput label="Last Update" value={lastUpdate} readOnly disabled />
+            </Stack>
+        </NavLink>
+        {sizeInMB >= 50 && (
+            <Alert color={sizeStatus.color} icon={<IconAlertTriangle size={16} />} mt="xs">
+                {sizeInMB >= 100
+                    ? "Your config exceeds the 100MB limit. You won't be able to save until you remove or replace large files."
+                    : "Your config is larger than 50MB. Consider removing unused files."}
+            </Alert>
+        )}
         <Space h="xl" />
-        <Text>TTS Configuration</Text>
+        <Title order={5} mb="xs">Files</Title>
+        <Button fullWidth variant="light" mb="xs" leftSection={<IconUpload size={18} />} onClick={() => uploadFileView('Upload File', addFile)}>
+            Upload File
+        </Button>
+        {Object.keys(appContext.alertConfig.data?.files || {}).length === 0 ? (
+            <Text size="sm" c="dimmed">Upload sounds, images or videos first – your alerts use them.</Text>
+        ) : (
+            <NavLink
+                label={`Uploaded Files (${Object.keys(appContext.alertConfig.data?.files || {}).length})`}
+                key="files"
+                leftSection={<IconFile />}
+            >
+                {fileNodes}
+            </NavLink>
+        )}
+        <Space h="xl" />
+        <Title order={5} mb="xs">Alerts</Title>
+        {alertNodes}
+        <Space h="xl" />
+        <Title order={5} mb="xs">TTS Configuration</Title>
         <NavLink 
             label="TTS Text Replacements" 
             leftSection={<IconSettings />}
@@ -1312,14 +1390,6 @@ export function AlertConfigurator(props: NavigationProps) {
                     : "No default voice configured"
             }
         />
-        <Space h="xl" />
-        <Text>Alerts</Text>
-        {alertNodes}
-        <Space h="xl" />
-        <NavLink label={"Files"} key={"files"} leftSection={<IconFile />} defaultOpened>
-            {fileNodes}
-        </NavLink>
-        <NavLink leftSection={<IconPlus />} label="Add New" key={"file-new"} onClick={() => uploadFileView('Upload File', addFile)}></NavLink>
 
     </ScrollArea>
 }

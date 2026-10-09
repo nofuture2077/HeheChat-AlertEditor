@@ -4,7 +4,13 @@ import { Dropzone, DropzoneProps } from '@mantine/dropzone';
 import { formatFileSize } from './helper';
 import { useState } from 'react';
 
-const DEFAULT_ACCEPT = ["audio/mpeg", "image/webp", "video/webm", "application/zip"];
+// Everything that isn't mp3, webp, webm or zip gets converted after the drop
+const DEFAULT_ACCEPT = [
+  "audio/mpeg", "audio/ogg", "audio/wav", "audio/x-wav", "audio/wave",
+  "image/webp", "image/png", "image/jpeg", "image/gif",
+  "video/webm", "video/mp4",
+  "application/zip"
+];
 
 export function DropZone(props: {onSelect: (file: File) => void, accept?: string[]}) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -43,7 +49,7 @@ export function DropZone(props: {onSelect: (file: File) => void, accept?: string
           <Text size="sm" c="dimmed" inline mt={7}>
             {selectedFile ? 
               `Selected: ${selectedFile.name} (${formatFileSize(selectedFile.size)})` : 
-              ''}
+              props.accept ? '' : 'MP3, WAV, OGG, PNG, JPG, GIF, WebP, MP4, WebM or ZIP – media is optimized automatically'}
           </Text>
         </div>
       </Group>

@@ -1,7 +1,7 @@
 import { Base64File, EventAlert, EventAlertConfig, EventMainType } from '../../../src/components/types';
-import { generateGUID, hashObjectSHA256 } from '../../../src/components/helper';
+import { bytesToBase64, generateGUID, hashObjectSHA256 } from '../../../src/components/helper';
 import { ConversionPlan, DEFAULT_VOICE, MediaJob } from './mapping';
-import { download, MediaConverter, MediaResult } from './media';
+import { download, MediaConverter, MediaResult } from '../../../src/components/media';
 
 export type FileStatus = 'queued' | 'downloading' | 'converting' | 'done' | 'error';
 
@@ -55,15 +55,6 @@ function readChatAlert(): EventAlert {
             }
         }
     };
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    return btoa(binary);
 }
 
 function uniqueName(baseName: string, ext: string, used: Set<string>): string {

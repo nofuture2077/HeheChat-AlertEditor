@@ -1,7 +1,7 @@
 {
   "name": "hehealert-editor",
   "private": true,
-  "version": "0.14.0",
+  "version": "0.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,6 +19,7 @@
     "@mantine/core": "^8.1.2",
     "@mantine/dropzone": "^8.1.2",
     "@mantine/hooks": "^8.1.2",
+    "@mantine/notifications": "^8.3.18",
     "@mui/icons-material": "^5.14.3",
     "@mui/material": "^5.14.5",
     "@tabler/icons-react": "^3.28.1",

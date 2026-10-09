@@ -1,5 +1,7 @@
-import { useContext, useState, useEffect } from 'react';
-import { AppShell, Image, Group, Text, ActionIcon, Modal, Button } from '@mantine/core';
+import { useContext, useState, useEffect, useMemo } from 'react';
+import { AppShell, Group, Text, ActionIcon, Modal, Button, Tooltip } from '@mantine/core';
+import { useHotkeys } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
 import { IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport, IconPlayerPlay } from '@tabler/icons-react'
@@ -14,27 +16,24 @@ const AlertEditor = () => {
   const [save, setSave] = useState(false);
   const [previewOpened, setPreviewOpened] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [savedConfigHash, setSavedConfigHash] = useState<string>('');
+  const [savedConfigKey, setSavedConfigKey] = useState<string>('');
   const [fileSizeWarningOpened, setFileSizeWarningOpened] = useState(false);
   const [fileSizeError, setFileSizeError] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
 
-  // Track unsaved changes by comparing current hash with last saved hash
+  // The hash only covers the data, the name lives in meta and has to be compared separately
+  const configKey = appContext.alertConfig.meta.hash + '|' + appContext.alertConfig.meta.name;
+
+  // Track unsaved changes by comparing the current config with the last saved one
   useEffect(() => {
-    // Initialize saved hash when config is first loaded
-    if (appContext.alertConfig.meta.hash && savedConfigHash === '') {
-      setSavedConfigHash(appContext.alertConfig.meta.hash);
+    // Initialize saved state when config is first loaded
+    if (appContext.alertConfig.meta.hash && savedConfigKey === '') {
+      setSavedConfigKey(configKey);
       setHasUnsavedChanges(false);
+    } else if (savedConfigKey) {
+      setHasUnsavedChanges(configKey !== savedConfigKey);
     }
-    // Check if current config differs from saved config
-    else if (savedConfigHash && appContext.alertConfig.meta.hash !== savedConfigHash) {
-      setHasUnsavedChanges(true);
-    }
-    // If hashes match, no unsaved changes
-    else if (savedConfigHash && appContext.alertConfig.meta.hash === savedConfigHash) {
-      setHasUnsavedChanges(false);
-    }
-  }, [appContext.alertConfig.meta.hash, savedConfigHash]);
+  }, [configKey, savedConfigKey]);
 
   // Warning when leaving page with unsaved changes
   useEffect(() => {
@@ -50,11 +49,11 @@ const AlertEditor = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Calculate the file size of the alert config
-  const calculateConfigSize = () => {
-    const configString = JSON.stringify(appContext.alertConfig);
-    return new Blob([configString]).size;
-  };
+  // Stringifying the config including all base64 files is expensive, only do it when the config changes
+  const configSize = useMemo(
+    () => new Blob([JSON.stringify(appContext.alertConfig)]).size,
+    [appContext.alertConfig, appContext.alertConfig.meta.hash]
+  );
 
   // Get file size status with color and message
   const getFileSizeStatus = (sizeInBytes: number) => {
@@ -87,7 +86,45 @@ const AlertEditor = () => {
     URL.revokeObjectURL(url);
   };
 
+  const uploadConfig = () => {
+    const savedKey = configKey;
+    setSave(true);
+    appContext.uploadAlertConfig().then(() => {
+      setSavedConfigKey(savedKey);
+      notifications.show({ color: 'green', title: 'Saved', message: 'Your alert config is live.' });
+    }).catch((error) => {
+      console.error('Saving alert config failed', error);
+      notifications.show({
+        color: 'red',
+        title: 'Saving failed',
+        message: `Your changes are not saved yet. ${error instanceof Error ? error.message : ''}`,
+        autoClose: false
+      });
+    }).finally(() => setSave(false));
+  };
+
+  const saveConfig = () => {
+    if (save) {
+      return;
+    }
+    const sizeStatus = getFileSizeStatus(configSize);
+    if (sizeStatus.status === 'error') {
+      setFileSizeError(true);
+    } else if (sizeStatus.status === 'warning') {
+      setFileSizeWarningOpened(true);
+    } else {
+      uploadConfig();
+    }
+  };
+
+  // Empty tag list: Ctrl/Cmd+S also saves while typing in an input
+  useHotkeys([['mod+S', saveConfig]], []);
+
   const applyImport = (config: EventAlertConfig, mode: ImportMode) => {
+    if (mode === 'override') {
+      // Overriding can't be undone, keep a copy of the current config
+      handleExport();
+    }
     const next = mode === 'merge' ? mergeAlertConfigs(appContext.alertConfig, config) : config;
     const sizeInMB = new Blob([JSON.stringify(next)]).size / (1024 * 1024);
 
@@ -102,7 +139,6 @@ const AlertEditor = () => {
     }
   };
 
-  const bProps = save? {loading: true, loaderProps:{ type: 'dots' }} : {};
   return (
     <AppShell
       header={{ height: 52 }}
@@ -114,67 +150,60 @@ const AlertEditor = () => {
             <HeaderLogo height={28}/>
             <Text fw={700} size="18px">Editor</Text>
           </Group>
-          <Group>
-              <ActionIcon 
-              variant="light" 
-              color="blue"
-              onClick={() => {
-                setPreviewOpened(true);
-              }}
-              title="Preview Alert"
-            ><IconPlayerPlay /></ActionIcon>
-            <ActionIcon 
-              variant="light" 
-              color="blue"
-              onClick={() => {
-                window.open(import.meta.env.VITE_SINK_URL + "#token=" + appContext.sink + "&preview=true", '_blank');
-              }}
-              title="Preview in Browser"
-            ><IconEye /></ActionIcon>
-                        
-            <ActionIcon 
-              variant="light"
-              color="green"
-              onClick={handleExport}
-              title="Export Alert Config"
-            >
-              <IconPackageExport/>
-            </ActionIcon>
-            <ActionIcon 
-              variant="light"
-              color="orange"
-              onClick={() => setImportOpened(true)}
-              title="Import Alert Config"
-            >
-              <IconPackageImport/>
-            </ActionIcon>
-            <ActionIcon 
-              variant="light"
-              color={hasUnsavedChanges ? "red" : "gray"}
-              {...bProps}
-              onClick={() => {
-                const configSize = calculateConfigSize();
-                const sizeInMB = configSize / (1024 * 1024);
-                const sizeStatus = getFileSizeStatus(configSize);
-                
-                if (sizeStatus.status === 'error') {
-                  setFileSizeError(true);
-                } else if (sizeStatus.status === 'warning') {
-                  setFileSizeWarningOpened(true);
-                } else {
-                  // Size is okay, proceed with save
-                  setSave(true);
-                  appContext.uploadAlertConfig().then(() => {
-                    setSave(false);
-                    setSavedConfigHash(appContext.alertConfig.meta.hash);
-                    setHasUnsavedChanges(false);
-                  });
-                }
-              }}
-              title="Save Alert Config"
-            >
-              <IconDeviceFloppy/>
-            </ActionIcon>
+          <Group gap="xs">
+            <Tooltip label="Test an alert on your overlay">
+              <ActionIcon
+                variant="light"
+                color="blue"
+                size="lg"
+                onClick={() => setPreviewOpened(true)}
+                aria-label="Test alert"
+              ><IconPlayerPlay /></ActionIcon>
+            </Tooltip>
+            <Tooltip label="Open overlay preview in a new tab">
+              <ActionIcon
+                variant="light"
+                color="blue"
+                size="lg"
+                onClick={() => {
+                  window.open(import.meta.env.VITE_SINK_URL + "#token=" + appContext.sink + "&preview=true", '_blank');
+                }}
+                aria-label="Open overlay preview"
+              ><IconEye /></ActionIcon>
+            </Tooltip>
+            <Tooltip label="Export config as file">
+              <ActionIcon
+                variant="light"
+                color="green"
+                size="lg"
+                onClick={handleExport}
+                aria-label="Export config"
+              ><IconPackageExport /></ActionIcon>
+            </Tooltip>
+            <Tooltip label="Import config from file">
+              <ActionIcon
+                variant="light"
+                color="orange"
+                size="lg"
+                onClick={() => setImportOpened(true)}
+                aria-label="Import config"
+              ><IconPackageImport /></ActionIcon>
+            </Tooltip>
+            {hasUnsavedChanges && !save && (
+              <Text size="sm" c="dimmed" visibleFrom="sm">Unsaved changes</Text>
+            )}
+            <Tooltip label="Save (Ctrl+S)">
+              <Button
+                variant={hasUnsavedChanges ? "filled" : "light"}
+                color={hasUnsavedChanges ? "pink" : "gray"}
+                leftSection={<IconDeviceFloppy size={18} />}
+                loading={save}
+                loaderProps={{ type: 'dots' }}
+                onClick={saveConfig}
+              >
+                Save
+              </Button>
+            </Tooltip>
           </Group>
           </Group>
       </AppShell.Header>
@@ -202,7 +231,7 @@ const AlertEditor = () => {
           title="Alert Config Size Warning"
         >
           <Text mb="md">
-            Your alert configuration is larger than 50MB ({formatFileSize(calculateConfigSize())}). 
+            Your alert configuration is larger than 50MB ({formatFileSize(configSize)}). 
             Configurations above 50MB may cause performance issues.
           </Text>
           <Text mb="md">
@@ -216,12 +245,7 @@ const AlertEditor = () => {
               color="yellow"
               onClick={() => {
                 setFileSizeWarningOpened(false);
-                setSave(true);
-                appContext.uploadAlertConfig().then(() => {
-                  setSave(false);
-                  setSavedConfigHash(appContext.alertConfig.meta.hash);
-                  setHasUnsavedChanges(false);
-                });
+                uploadConfig();
               }}
             >
               Save Anyway
@@ -236,7 +260,7 @@ const AlertEditor = () => {
           title="Alert Config Size Error"
         >
           <Text mb="md" color="red">
-            Your alert configuration is too large ({formatFileSize(calculateConfigSize())}).
+            Your alert configuration is too large ({formatFileSize(configSize)}).
             The maximum allowed size is 100MB.
           </Text>
           <Text mb="md">

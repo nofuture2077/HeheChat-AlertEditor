@@ -1,4 +1,4 @@
 {
   "extends": "../tsconfig.json",
-  "include": ["src", "../src/components/types.ts", "../src/components/helper.ts", "../src/vite-env.d.ts"]
+  "include": ["src", "../src/components/types.ts", "../src/components/helper.ts", "../src/components/media.ts", "../src/vite-env.d.ts"]
 }

@@ -1,5 +1,6 @@
 import AlertEditor from './components/AlertEditor';
-import { createTheme, MantineProvider, virtualColor } from '@mantine/core';
+import { Alert, Button, Center, createTheme, Loader, MantineProvider, Stack, virtualColor } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { AppContext, DefaultAppContext } from './ApplicationContext';
 import { useEffect, useState } from 'react';
 import { EventAlertConfig } from './components/types';
@@ -8,9 +9,11 @@ import { HomePage } from './pages/Home.page'
 import { AITTSVoice, GoogleTTSVoice } from './components/types'
 import '@mantine/core/styles/global.css';
 import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 
 function App() {
     const [appContext, setAppContext] = useState(DefaultAppContext);
+    const [configState, setConfigState] = useState<'loading' | 'error' | 'ready'>('loading');
     const theme = createTheme({
         colors: {
             primary: virtualColor({
@@ -24,14 +27,27 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
-    if (!token) {
-        return <MantineProvider defaultColorScheme="auto" theme={theme}><HomePage/></MantineProvider>
-    }
+    const loadConfig = () => {
+        setConfigState('loading');
+        fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/get?token=' + token).then(res => {
+            if (!res.ok) {
+                throw new Error(`${res.status} ${res.statusText}`);
+            }
+            return res.json();
+        }).then(data => {
+            setAppContext((context) => ({...context, alertConfig: {...data, data: {...data.data, alerts: {...context.alertConfig.data?.alerts, ...data.data.alerts}}}}));
+            setConfigState('ready');
+        }).catch(error => {
+            console.error('Failed to load alert config:', error);
+            setConfigState('error');
+        });
+    };
 
     useEffect(() => {
-        fetch(import.meta.env.VITE_BACKEND_URL + '/event/config/get?token=' + token).then(res => res.json()).then(data => {
-            setAppContext((context) => ({...context, alertConfig: {...data, data: {...data.data, alerts: {...context.alertConfig.data?.alerts, ...data.data.alerts}}}}));
-        });
+        if (!token) {
+            return;
+        }
+        loadConfig();
 
         fetch(import.meta.env.VITE_BACKEND_URL + "/sink/get?token=" + token).then(res => res.json()).then(data => {
             const sink = data.sink;
@@ -61,10 +77,14 @@ function App() {
         });
     }, []);
 
+    if (!token) {
+        return <MantineProvider defaultColorScheme="auto" theme={theme}><HomePage/></MantineProvider>
+    }
+
     const setAlertConfig = async (alertConfig: EventAlertConfig) => {
         alertConfig.meta.lastUpdate = new Date().toISOString();
         alertConfig.meta.hash = await(hashObjectSHA256(alertConfig.data));
-        setAppContext({...appContext, alertConfig });
+        setAppContext((context) => ({...context, alertConfig }));
     };
 
     const uploadAlertConfig = async function () {
@@ -85,9 +105,12 @@ function App() {
             method: 'POST'
         });
         
-        // Wait for both requests to complete
-        await Promise.all([mainRequest, metaRequest]);
-        return undefined;
+        // Wait for both requests to complete, fetch only rejects on network errors
+        const responses = await Promise.all([mainRequest, metaRequest]);
+        const failed = responses.find((res) => !res.ok);
+        if (failed) {
+            throw new Error(`Server responded with ${failed.status} ${failed.statusText}`);
+        }
     }
 
     const replayEvent = async function (event: any) {
@@ -102,9 +125,23 @@ function App() {
     }
 
     return <MantineProvider defaultColorScheme="auto" theme={theme}>
-            <AppContext.Provider value={{...appContext, setAlertConfig, uploadAlertConfig, replayEvent, isPremium: appContext.isPremium}}>
-                <AlertEditor />
-            </AppContext.Provider>
+            <Notifications position="top-right" />
+            {configState === 'ready' ? (
+                <AppContext.Provider value={{...appContext, setAlertConfig, uploadAlertConfig, replayEvent, isPremium: appContext.isPremium}}>
+                    <AlertEditor />
+                </AppContext.Provider>
+            ) : (
+                <Center h="100vh">
+                    {configState === 'loading' ? <Loader /> : (
+                        <Stack align="center">
+                            <Alert color="red" title="Could not load your alert config">
+                                Check your connection and try again. If this keeps happening, open the editor again from the HeheChat settings.
+                            </Alert>
+                            <Button onClick={loadConfig}>Retry</Button>
+                        </Stack>
+                    )}
+                </Center>
+            )}
         </MantineProvider>;
 }
 
