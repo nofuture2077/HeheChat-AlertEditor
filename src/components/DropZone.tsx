@@ -4,7 +4,9 @@ import { Dropzone, DropzoneProps } from '@mantine/dropzone';
 import { formatFileSize } from './helper';
 import { useState } from 'react';
 
-export function DropZone(props: {onSelect: (file: File) => void}) {
+const DEFAULT_ACCEPT = ["audio/mpeg", "image/webp", "video/webm", "application/zip"];
+
+export function DropZone(props: {onSelect: (file: File) => void, accept?: string[]}) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   return (
     <Dropzone
@@ -14,7 +16,7 @@ export function DropZone(props: {onSelect: (file: File) => void}) {
         props.onSelect(file);
       }}
       onReject={(files) => console.log('rejected files', files)}
-      accept={["audio/mpeg", "image/webp", "video/webm", "application/zip"]}
+      accept={props.accept ?? DEFAULT_ACCEPT}
       multiple={false}
     >
       <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: 'none' }}>

@@ -6,6 +6,8 @@ import { IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport, IconPl
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
 import { formatFileSize } from './helper';
+import { ImportConfigModal, ImportMode, mergeAlertConfigs } from './ImportConfigModal';
+import { EventAlertConfig } from './types';
 
 const AlertEditor = () => {
   const appContext = useContext(AppContext);
@@ -15,6 +17,7 @@ const AlertEditor = () => {
   const [savedConfigHash, setSavedConfigHash] = useState<string>('');
   const [fileSizeWarningOpened, setFileSizeWarningOpened] = useState(false);
   const [fileSizeError, setFileSizeError] = useState(false);
+  const [importOpened, setImportOpened] = useState(false);
 
   // Track unsaved changes by comparing current hash with last saved hash
   useEffect(() => {
@@ -84,43 +87,19 @@ const AlertEditor = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        // Check file size before reading
-        if (file.size > 100 * 1024 * 1024) { // 100MB in bytes
-          setFileSizeError(true);
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const config = JSON.parse(e.target?.result as string);
-            const configSize = new Blob([JSON.stringify(config)]).size;
-            const sizeInMB = configSize / (1024 * 1024);
-            
-            if (sizeInMB >= 100) {
-              setFileSizeError(true);
-            } else if (sizeInMB >= 50) {
-              // Set the config but also show warning
-              appContext.setAlertConfig(config);
-              setFileSizeWarningOpened(true);
-            } else {
-              appContext.setAlertConfig(config);
-            }
-          } catch (error) {
-            console.error('Failed to parse config file:', error);
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
+  const applyImport = (config: EventAlertConfig, mode: ImportMode) => {
+    const next = mode === 'merge' ? mergeAlertConfigs(appContext.alertConfig, config) : config;
+    const sizeInMB = new Blob([JSON.stringify(next)]).size / (1024 * 1024);
+
+    if (sizeInMB >= 100) {
+      setFileSizeError(true);
+    } else if (sizeInMB >= 50) {
+      // Set the config but also show warning
+      appContext.setAlertConfig(next);
+      setFileSizeWarningOpened(true);
+    } else {
+      appContext.setAlertConfig(next);
+    }
   };
 
   const bProps = save? {loading: true, loaderProps:{ type: 'dots' }} : {};
@@ -164,7 +143,7 @@ const AlertEditor = () => {
             <ActionIcon 
               variant="light"
               color="orange"
-              onClick={handleImport}
+              onClick={() => setImportOpened(true)}
               title="Import Alert Config"
             >
               <IconPackageImport/>
@@ -210,6 +189,12 @@ const AlertEditor = () => {
           alertConfig={appContext.alertConfig}
         />
         
+        <ImportConfigModal
+          opened={importOpened}
+          onClose={() => setImportOpened(false)}
+          onImport={applyImport}
+        />
+
         {/* File Size Warning Modal */}
         <Modal
           opened={fileSizeWarningOpened}
