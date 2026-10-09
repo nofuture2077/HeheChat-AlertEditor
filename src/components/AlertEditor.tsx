@@ -4,7 +4,7 @@ import { useHotkeys } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
-import { IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport, IconPlayerPlay } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
 import { formatFileSize } from './helper';
@@ -151,25 +151,15 @@ const AlertEditor = () => {
             <Text fw={700} size="18px">Editor</Text>
           </Group>
           <Group gap="xs">
-            <Tooltip label="Test an alert on your overlay">
-              <ActionIcon
+            <Tooltip label="Preview and test your alerts">
+              <Button
                 variant="light"
                 color="blue"
-                size="lg"
+                leftSection={<IconEye size={18} />}
                 onClick={() => setPreviewOpened(true)}
-                aria-label="Test alert"
-              ><IconPlayerPlay /></ActionIcon>
-            </Tooltip>
-            <Tooltip label="Open overlay preview in a new tab">
-              <ActionIcon
-                variant="light"
-                color="blue"
-                size="lg"
-                onClick={() => {
-                  window.open(import.meta.env.VITE_SINK_URL + "#token=" + appContext.sink + "&preview=true", '_blank');
-                }}
-                aria-label="Open overlay preview"
-              ><IconEye /></ActionIcon>
+              >
+                Preview
+              </Button>
             </Tooltip>
             <Tooltip label="Export config as file">
               <ActionIcon
@@ -211,11 +201,8 @@ const AlertEditor = () => {
       <AppShell.Main>
         <AlertConfigurator/>
         <PreviewModal
-          channel={appContext.alertConfig.meta.channel}
           opened={previewOpened}
           onClose={() => setPreviewOpened(false)}
-          onSubmit={appContext.replayEvent}
-          alertConfig={appContext.alertConfig}
         />
         
         <ImportConfigModal

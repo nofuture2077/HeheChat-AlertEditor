@@ -1,149 +1,172 @@
-import { Modal, Select, TextInput, Button, Stack, NumberInput } from '@mantine/core';
-import { useState, useEffect } from 'react';
-import { EventMainType, EventType, EventTypeMapping, getAlert, Event, EventAlertConfig } from './types';
+import { Modal, Select, TextInput, Button, Stack, NumberInput, Flex, Box, ScrollArea, Group, Switch, Text, Divider, Alert } from '@mantine/core';
+import { useState, useEffect, useContext, useRef } from 'react';
+import { IconExternalLink, IconPlayerPlay, IconBroadcast, IconPlayerStop, IconInfoCircle } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { EventMainType, EventType, getAlert, EventAlert } from './types';
+import { AppContext, AppContextProps } from '../ApplicationContext';
+import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
+import { buildSampleEvent, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, SampleData } from './preview/buildPreview';
 
 interface PreviewModalProps {
-  alertConfig: EventAlertConfig;
-  channel: string;
   opened: boolean;
   onClose: () => void;
-  onSubmit: (event: any) => void;
+  initialType?: EventMainType;
+  /** Alert being edited (unsaved); played instead of the alert picked from the config */
+  forcedAlert?: EventAlert;
 }
 
-export function PreviewModal({ opened, onClose, onSubmit, channel, alertConfig }: PreviewModalProps) {
-  const [mainType, setMainType] = useState<EventMainType>('follow');
-  const [eventType, setEventType] = useState<EventType>('follow');
-  const [username, setUsername] = useState('TestUser');
-  const [usernameTo, setUsernameTo] = useState('GiftedUser');
-  const [amount, setAmount] = useState<number | ''>(1000);
-  const [amount2, setAmount2] = useState<number | ''>(1);
-  const [text, setText] = useState('Test message');
-  const [rewardTitle, setRewardTitle] = useState('TTS');
+const MAIN_TYPES: EventMainType[] = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'kofi', 'hypetrain', 'tts', 'streak'];
 
-  const alertTypes: Record<string, string> = {
-    'sub': 'Subscriptions',
-    'subgift': "Gift-Subs",
-    "subgiftb": "Received Gift Subs",
-    "raid": "Raids",
-    "follow": "Follows",
-    "donation": "Donations",
-    "cheer": "Bit-Donations",
-    "channelPointRedemption": "Channel Points",
-    "kofi": "Ko-Fi Integration",
-    "hypetrain": "Hypetrain",
-    "tts": "Read Chat",
-    "streak": "Watch Streak"
-  };
+export function openOverlayInNewTab(sink?: string) {
+  window.open(import.meta.env.VITE_SINK_URL + "#token=" + sink + "&preview=true", '_blank');
+}
 
-  const mainTypes = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'kofi', 'hypetrain', 'tts', 'streak'].map(type => ({
-    value: type,
-    label: alertTypes[type]
-  }));
-  
-  const getEventTypes = (mainType: EventMainType): EventType[] => {
-    return Object.entries(EventTypeMapping)
-      .filter(([_, value]) => value === mainType && value !== _)
-      .map(([key]) => key as EventType);
-  };
+export function PreviewModal({ opened, onClose, initialType, forcedAlert }: PreviewModalProps) {
+  const appContext = useContext<AppContextProps>(AppContext);
+  const frameRef = useRef<OverlayPreviewHandle>(null);
+  const [mainType, setMainType] = useState<EventMainType>(initialType || 'follow');
+  const [eventType, setEventType] = useState<EventType>(defaultEventSubtype(initialType || 'follow'));
+  const [sample, setSample] = useState<SampleData>(DEFAULT_SAMPLE_DATA);
+  const [useForcedAlert, setUseForcedAlert] = useState(true);
 
-  const eventTypes = getEventTypes(mainType);
+  const channel = appContext.alertConfig.meta.channel;
+  const eventTypes = getEventSubtypes(mainType);
+  const updateSample = (patch: Partial<SampleData>) => setSample(prev => ({ ...prev, ...patch }));
 
   useEffect(() => {
-    if (eventTypes.length > 0) {
-      setEventType(eventTypes[0]);
-    } else {
-      setEventType(mainType as EventType);
+    if (opened && initialType) {
+      setMainType(initialType);
+      setEventType(defaultEventSubtype(initialType));
     }
-  }, [mainType]);
+  }, [opened, initialType]);
 
-  const handleSubmit = () => {
-    const eventData = {
-      rewardTitle,
-      username,
-      eventType,
-      text: [{text}]
-    };
-    const event: Event = {
-      id: Date.now(),
-      channel,
-      username,
-      eventtype: eventType,
-      date: Date.now(),
-      ...(usernameTo && mainType === 'subgiftb' && { usernameTo }),
-      ...(amount !== '' && { amount }),
-      ...(amount2 !== '' && mainType === 'sub' && { amount2 }),
-      text: JSON.stringify(eventData),
-    };
-    event.eventAlert = getAlert(event, eventData, alertConfig);
-    onSubmit(event);
+  const buildEvent = () => {
+    const { event, eventData } = buildSampleEvent(channel, eventType, sample);
+    event.eventAlert = (forcedAlert && useForcedAlert) ? forcedAlert : getAlert(event, eventData, appContext.alertConfig);
+    return event;
+  };
+
+  const handlePlay = () => {
+    const event = buildEvent();
+    if (!event.eventAlert) {
+      notifications.show({ color: 'yellow', title: 'No matching alert', message: `No ${EVENT_TYPE_LABELS[mainType]} alert matches this event.` });
+      return;
+    }
+    frameRef.current?.playEvent(event);
+  };
+
+  const handleSendToOverlay = () => {
+    appContext.replayEvent(buildEvent());
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Preview Alert" size="md">
-      <Stack>
-        <Select
-          label="Event Main Type"
-          data={mainTypes}
-          value={mainType}
-          onChange={(value) => setMainType(value as EventMainType)}
-        />
-        
-        {eventTypes.length > 0 && (
-          <Select
-            label="Event Type"
-            data={eventTypes}
-            value={eventType}
-            onChange={(value) => setEventType(value as EventType)}
-          />
-        )}
+    <Modal opened={opened} onClose={onClose} title="Alert Preview" fullScreen>
+      <Flex gap="md" direction={{ base: 'column', md: 'row' }} align="flex-start">
+        <Box style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+          <Box style={{ width: 'min(100%, calc((100vh - 100px) * 16 / 9))' }}>
+            <OverlayPreviewFrame ref={frameRef} />
+          </Box>
+        </Box>
 
-        <TextInput
-          label="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+        <ScrollArea.Autosize mah="calc(100vh - 100px)" w={{ base: '100%', md: 340 }} style={{ flexShrink: 0 }}>
+          <Stack gap="sm" pr="sm">
+            {forcedAlert && (
+              <Switch
+                label={`Play "${forcedAlert.name || 'unnamed'}" (being edited)`}
+                checked={useForcedAlert}
+                onChange={(ev) => setUseForcedAlert(ev.currentTarget.checked)}
+              />
+            )}
 
-        {mainType === 'subgiftb' && (
-          <TextInput
-            label="Username To"
-            value={usernameTo}
-            onChange={(e) => setUsernameTo(e.target.value)}
-          />
-        )}
+            <Select
+              label="Event Main Type"
+              data={MAIN_TYPES.map(type => ({ value: type, label: EVENT_TYPE_LABELS[type] }))}
+              value={mainType}
+              onChange={(value) => {
+                const type = (value || mainType) as EventMainType;
+                setMainType(type);
+                setEventType(defaultEventSubtype(type));
+              }}
+            />
 
-        {mainType !== 'subgiftb' && (
-        <NumberInput
-          label="Amount"
-          value={amount}
-          onChange={(val) => setAmount(val as number | '')}
-          min={0}
-        />)}
+            {eventTypes.length > 0 && (
+              <Select
+                label="Event Type"
+                data={eventTypes}
+                value={eventType}
+                onChange={(value) => setEventType((value || eventType) as EventType)}
+              />
+            )}
 
-        {mainType === 'sub' && (
-          <NumberInput
-            label="Amount 2"
-            value={amount2}
-            onChange={(val) => setAmount2(val as number | '')}
-            min={1}
-          />
-        )}
+            <TextInput
+              label="Username"
+              value={sample.username}
+              onChange={(e) => updateSample({ username: e.target.value })}
+            />
 
-        <TextInput
-          label="Text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+            {mainType === 'subgiftb' && (
+              <TextInput
+                label="Username To"
+                value={sample.usernameTo}
+                onChange={(e) => updateSample({ usernameTo: e.target.value })}
+              />
+            )}
 
-        {mainType === 'channelPointRedemption' && (
-          <TextInput
-            label="Reward Title"
-            value={rewardTitle}
-            onChange={(e) => setRewardTitle(e.target.value)}
-          />
-        )}
+            {mainType !== 'subgiftb' && (
+              <NumberInput
+                label="Amount"
+                value={sample.amount}
+                onChange={(val) => updateSample({ amount: val as number | '' })}
+                min={0}
+              />
+            )}
 
-        <Button onClick={handleSubmit}>Fire Event</Button>
-      </Stack>
+            {mainType === 'sub' && (
+              <NumberInput
+                label="Amount 2"
+                value={sample.amount2}
+                onChange={(val) => updateSample({ amount2: val as number | '' })}
+                min={1}
+              />
+            )}
+
+            <TextInput
+              label="Text"
+              value={sample.text}
+              onChange={(e) => updateSample({ text: e.target.value })}
+            />
+
+            {mainType === 'channelPointRedemption' && (
+              <TextInput
+                label="Reward Title"
+                value={sample.rewardTitle}
+                onChange={(e) => updateSample({ rewardTitle: e.target.value })}
+              />
+            )}
+
+            <Group grow>
+              <Button leftSection={<IconPlayerPlay size={16} />} onClick={handlePlay}>Play</Button>
+              <Button variant="default" leftSection={<IconPlayerStop size={16} />} onClick={() => frameRef.current?.clear()}>Clear</Button>
+            </Group>
+
+            <Text size="xs" c="dimmed">
+              The preview uses your unsaved changes. Click inside the preview once if sound doesn't play.
+            </Text>
+
+            <Divider label="OBS overlay" labelPosition="left" mt="sm" />
+
+            <Button variant="light" leftSection={<IconBroadcast size={16} />} onClick={handleSendToOverlay}>
+              Send to overlay preview tabs
+            </Button>
+            <Button variant="subtle" leftSection={<IconExternalLink size={16} />} onClick={() => openOverlayInNewTab(appContext.sink)}>
+              Open overlay preview in new tab
+            </Button>
+            <Alert variant="light" color="gray" icon={<IconInfoCircle size={16} />} p="xs">
+              <Text size="xs">Overlay preview tabs use your saved config — save first to see your latest changes there.</Text>
+            </Alert>
+          </Stack>
+        </ScrollArea.Autosize>
+      </Flex>
     </Modal>
   );
 }

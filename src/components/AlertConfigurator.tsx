@@ -1,16 +1,19 @@
-import { useContext, ReactElement, useState, useMemo } from 'react';
+import { useContext, ReactElement, useState, useMemo, useRef, useEffect } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip, Flex, Box, Popover } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconUserEdit } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
 import { OptimizedFile, useFileOptimizer } from './useFileOptimizer';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
+import { PreviewModal } from './PreviewModal';
+import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
+import { buildSampleEvent, DEFAULT_SAMPLE_DATA, defaultEventSubtype, SampleData, toVisualAlert } from './preview/buildPreview';
 
 export interface NavigationProps {
 }
@@ -225,9 +228,94 @@ export function AlertView(props: {
 
     const InfoText = "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
     const voiceTypes = config.aiVoices.length ? ['default', 'ai', 'google', 'none'] : ['default', 'google', 'none'];
+
+    const draftAlert: EventAlert = useMemo(() => ({
+        id,
+        name,
+        type,
+        specifier: {
+            type: specType,
+            amount: nummberSpecType ? specAmount : undefined,
+            text: nummberSpecType ? undefined : specText,
+            attribute: nummberSpecType ? undefined : specAttribute
+        },
+        restriction: 'none' as EventAlertRestriction,
+        minDuration: minDuration > 0 ? minDuration : undefined,
+        visual: (headline || text || image?.id) ? {
+            headline,
+            text,
+            position: position.join(' '),
+            layout: layout.join(' '),
+            element: image?.id || undefined
+        } : undefined,
+        audio: {
+            jingle: jingle?.id || undefined,
+            tts: (ttsText && voiceType !== 'none') ? {
+                text: ttsText,
+                voiceType,
+                voiceSpecifier: voice,
+                voiceParams: (voiceType === 'default' ? {} : { speed }) as Record<string, string | number>
+            } : undefined
+        }
+    }), [id, name, type, specType, specAmount, specText, specAttribute, nummberSpecType, minDuration, headline, text, image, position, layout, jingle, ttsText, voiceType, voice, speed]);
+
+    // Live overlay preview of the alert being edited
+    const previewRef = useRef<OverlayPreviewHandle>(null);
+    const [sample, setSample] = useState<SampleData>({ ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount });
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const channel = appContext.alertConfig.meta.channel;
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (draftAlert.visual) {
+                previewRef.current?.show(toVisualAlert(draftAlert, channel, sample));
+            } else {
+                previewRef.current?.clear();
+            }
+        }, 250);
+        return () => clearTimeout(timeout);
+    }, [draftAlert.visual, channel, sample]);
+
+    const playPreview = () => {
+        const { event } = buildSampleEvent(channel, defaultEventSubtype(type), sample);
+        event.eventAlert = draftAlert;
+        previewRef.current?.playEvent(event);
+    };
+
+    const previewColumn = (
+        <Stack gap="xs">
+            <OverlayPreviewFrame ref={previewRef} />
+            <Group justify="space-between" gap="xs">
+                <Button size="xs" leftSection={<IconPlayerPlay size={14} />} onClick={playPreview}>Play with sound</Button>
+                <Group gap={4}>
+                    <Popover width={260} position="bottom-end" shadow="md">
+                        <Popover.Target>
+                            <Tooltip label="Sample data for variables">
+                                <ActionIcon variant="light" aria-label="Sample data"><IconUserEdit size={16} /></ActionIcon>
+                            </Tooltip>
+                        </Popover.Target>
+                        <Popover.Dropdown>
+                            <Stack gap="xs">
+                                <TextInput size="xs" label="${username}" value={sample.username} onChange={(ev) => setSample({ ...sample, username: ev.target.value })} />
+                                <TextInput size="xs" label="${usernameTo}" value={sample.usernameTo} onChange={(ev) => setSample({ ...sample, usernameTo: ev.target.value })} />
+                                <NumberInput size="xs" label="${amount}" value={sample.amount} onChange={(val) => setSample({ ...sample, amount: val as number | '' })} />
+                                <NumberInput size="xs" label="${amount2}" value={sample.amount2} onChange={(val) => setSample({ ...sample, amount2: val as number | '' })} />
+                                <TextInput size="xs" label="${text}" value={sample.text} onChange={(ev) => setSample({ ...sample, text: ev.target.value })} />
+                            </Stack>
+                        </Popover.Dropdown>
+                    </Popover>
+                    <Tooltip label="Open large preview">
+                        <ActionIcon variant="light" aria-label="Open large preview" onClick={() => setShowPreviewModal(true)}><IconArrowsMaximize size={16} /></ActionIcon>
+                    </Tooltip>
+                </Group>
+            </Group>
+        </Stack>
+    );
+
     return (
-        <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false} size='xl'>
-            <Stack gap="sm">
+        <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false} size='min(1400px, 96vw)'>
+            <Flex gap="md" direction={{ base: 'column-reverse', lg: 'row' }} align={{ base: 'stretch', lg: 'flex-start' }}>
+            <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
                 <SimpleGrid cols={{ base: 1, md: 2 }}>
                     <Fieldset legend={props.title}>
                         <TextInput label="Id" value={id} readOnly disabled style={{ display: 'none' }}></TextInput>
@@ -484,44 +572,19 @@ export function AlertView(props: {
                     >
                         Copy Layout
                     </Button>
+                    <Button
+                        variant="light"
+                        color="blue"
+                        onClick={playPreview}
+                        leftSection={<IconPlayerPlay size={16} />}
+                    >
+                        Preview
+                    </Button>
                     <Button 
                         variant="filled" 
                         color="pink" 
                         disabled={(voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium) || false}
-                        onClick={() => {
-                            // Create the alert object
-                            const alertData = { 
-                                id, 
-                                name, 
-                                type, 
-                                specifier: { 
-                                    type: specType, 
-                                    amount: nummberSpecType ? specAmount : undefined, 
-                                    text: nummberSpecType ? undefined : specText, 
-                                    attribute: nummberSpecType ? undefined : specAttribute 
-                                }, 
-                                restriction: 'none' as EventAlertRestriction,
-                                minDuration: minDuration > 0 ? minDuration : undefined,
-                                visual: (headline || text || image?.id) ? {
-                                    headline, 
-                                    text, 
-                                    position: position.join(' '), 
-                                    layout: layout.join(' '), 
-                                    element: image?.id || undefined
-                                } : undefined, 
-                                audio: { 
-                                    jingle: jingle?.id || undefined, 
-                                    tts: (ttsText && voiceType !== 'none') ? { 
-                                        text: ttsText, 
-                                        voiceType, 
-                                        voiceSpecifier: voice,
-                                        voiceParams: (voiceType === 'default' ? {} : { speed }) as Record<string, string | number>
-                                    } : undefined
-                                }
-                            };
-                            
-                            props.confirm(alertData);
-                        }}
+                        onClick={() => props.confirm(draftAlert)}
                     >
                         Create Alert
                     </Button>
@@ -547,7 +610,19 @@ export function AlertView(props: {
                         onCopy={handleCopyLayout}
                     />
                 )}
+                {showPreviewModal && (
+                    <PreviewModal
+                        opened={true}
+                        onClose={() => setShowPreviewModal(false)}
+                        initialType={type}
+                        forcedAlert={draftAlert}
+                    />
+                )}
             </Stack>
+            <Box w={{ base: '100%', lg: 460 }} style={{ position: 'sticky', top: 0, flexShrink: 0, zIndex: 1 }}>
+                {previewColumn}
+            </Box>
+            </Flex>
         </Modal>);
 }
 
