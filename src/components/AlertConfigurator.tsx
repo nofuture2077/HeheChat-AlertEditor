@@ -1121,7 +1121,6 @@ export function AlertConfigurator(props: NavigationProps) {
             leftSection={icons[ev as EventMainType]}
             rightSection={alertCount > 0 ? <Badge size="sm" variant="light">{alertCount}</Badge> : undefined}
             disableRightSectionRotation={alertCount > 0}
-            defaultOpened={alertCount > 0}
         >
             {(appContext.alertConfig.data!.alerts[ev as EventMainType] || []).map((alert: EventAlert) => (
               <NavLink 
