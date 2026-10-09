@@ -1,5 +1,5 @@
 import { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Badge, Box, Loader, Center } from '@mantine/core';
+import { Badge, Box, Loader, Center, Text } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { IconVolumeOff } from '@tabler/icons-react';
 import { AppContext, AppContextProps } from '../../ApplicationContext';
@@ -35,6 +35,7 @@ export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle>(function Ove
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { ref: sizeRef, width } = useElementSize();
   const [ready, setReady] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
   const [status, setStatus] = useState<{ audio: boolean, connected: boolean }>({ audio: true, connected: true });
   // Last static alert, re-sent when the overlay (re)loads
   const pendingShow = useRef<StaticPreviewAlert | null>(null);
@@ -70,6 +71,15 @@ export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle>(function Ove
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   });
+
+  // An overlay without the editor preview bridge (e.g. outdated deployment) never reports ready
+  useEffect(() => {
+    if (ready) {
+      return;
+    }
+    const timeout = setTimeout(() => setTimedOut(true), 15000);
+    return () => clearTimeout(timeout);
+  }, [ready]);
 
   // Keep the overlay in sync with the unsaved config (files included)
   useEffect(() => {
@@ -129,8 +139,10 @@ export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle>(function Ove
         }}
       />
       {!ready && (
-        <Center pos="absolute" inset={0}>
-          <Loader size="sm" />
+        <Center pos="absolute" inset={0} p="md">
+          {timedOut
+            ? <Text size="sm" c="dimmed" ta="center">The overlay did not respond. It may not support the editor preview yet.</Text>
+            : <Loader size="sm" />}
         </Center>
       )}
       {ready && !status.connected && (
