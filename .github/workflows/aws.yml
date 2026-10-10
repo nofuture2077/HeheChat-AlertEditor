@@ -30,9 +30,6 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Build converter
-        run: cd converter && npm install && npm run build
-
       - name: Transfer files to AWS
         env:
           AWS_SSH_HOST: ${{ secrets.AWS_SSH_HOST }}
@@ -46,5 +43,3 @@ jobs:
           ssh-keyscan -H "${AWS_SSH_HOST}" >> ~/.ssh/known_hosts
           # Transfer editor files with rsync
           rsync -avz --delete ./dist "${AWS_SSH_USER}@${AWS_SSH_HOST}:${AWS_SSH_PATH}"
-          # Transfer converter files with rsync
-          rsync -avz --delete ./converter/dist/ "${AWS_SSH_USER}@${AWS_SSH_HOST}:${AWS_SSH_PATH}/converter/"

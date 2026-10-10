@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Alert, Button, Checkbox, Group, Image, List, PasswordInput, rem, Stack, Tabs, Text } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import { IconFileImport, IconInfoCircle, IconPlugConnected, IconX } from '@tabler/icons-react';
-import { loadAlertOverlays, SEOverlay } from './convert/seApi';
-import { isSEExport, SEExport } from './convert/seTypes';
+import { loadAlertOverlays, SEOverlay } from './seApi';
+import { isSEExport, SEExport } from './seTypes';
 
 type Props = {
     onSelect: (exports: SEExport[]) => void;

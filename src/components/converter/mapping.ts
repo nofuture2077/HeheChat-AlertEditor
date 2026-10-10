@@ -5,8 +5,8 @@ import {
     EventMainType,
     EventType,
     EventTypeMapping
-} from '../../../src/components/types';
-import { generateGUID } from '../../../src/components/helper';
+} from '../types';
+import { generateGUID } from '../helper';
 import { ALERT_BOX_WIDGET, SEAlertSettings, SEEvent, SEExport, SEVariation } from './seTypes';
 import { alertLayout, alertPosition, textCss, WidgetBox, widgetBox } from './style';
 

@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useMemo } from 'react';
+import { useContext, useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { AppShell, Group, Text, ActionIcon, Modal, Button, Tooltip } from '@mantine/core';
 import { useHotkeys } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -11,6 +11,11 @@ import { formatFileSize } from './helper';
 import { ImportConfigModal, ImportMode, mergeAlertConfigs } from './ImportConfigModal';
 import { EventAlertConfig } from './types';
 
+// The converter pulls in ffmpeg and is rarely used, load it only when it is opened
+const StreamElementsImportModal = lazy(() =>
+  import('./converter/StreamElementsImportModal').then((m) => ({ default: m.StreamElementsImportModal }))
+);
+
 const AlertEditor = () => {
   const appContext = useContext(AppContext);
   const [save, setSave] = useState(false);
@@ -20,6 +25,7 @@ const AlertEditor = () => {
   const [fileSizeWarningOpened, setFileSizeWarningOpened] = useState(false);
   const [fileSizeError, setFileSizeError] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
+  const [seImportOpened, setSeImportOpened] = useState(false);
 
   // The hash only covers the data, the name lives in meta and has to be compared separately
   const configKey = appContext.alertConfig.meta.hash + '|' + appContext.alertConfig.meta.name;
@@ -130,12 +136,21 @@ const AlertEditor = () => {
 
     if (sizeInMB >= 100) {
       setFileSizeError(true);
+      return false;
     } else if (sizeInMB >= 50) {
       // Set the config but also show warning
       appContext.setAlertConfig(next);
       setFileSizeWarningOpened(true);
     } else {
       appContext.setAlertConfig(next);
+    }
+    return true;
+  };
+
+  const applyStreamElementsImport = (config: EventAlertConfig) => {
+    if (applyImport(config, 'merge')) {
+      const count = Object.values(config.data?.alerts || {}).reduce((sum, list) => sum + (list?.length || 0), 0);
+      notifications.show({ color: 'green', title: 'Alerts imported', message: `${count} StreamElements alert${count === 1 ? '' : 's'} added. Don't forget to save.` });
     }
   };
 
@@ -209,7 +224,18 @@ const AlertEditor = () => {
           opened={importOpened}
           onClose={() => setImportOpened(false)}
           onImport={applyImport}
+          onStreamElements={() => setSeImportOpened(true)}
         />
+
+        {seImportOpened && (
+          <Suspense>
+            <StreamElementsImportModal
+              opened
+              onClose={() => setSeImportOpened(false)}
+              onImport={applyStreamElementsImport}
+            />
+          </Suspense>
+        )}
 
         {/* File Size Warning Modal */}
         <Modal

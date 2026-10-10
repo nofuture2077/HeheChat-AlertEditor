@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
 import { IconAlertCircle, IconAlertTriangle } from '@tabler/icons-react';
 import { DropZone } from './DropZone';
 import { generateGUID } from './helper';
@@ -47,6 +47,7 @@ export function ImportConfigModal(props: {
   opened: boolean;
   onClose: () => void;
   onImport: (config: EventAlertConfig, mode: ImportMode) => void;
+  onStreamElements?: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState<ImportMode>('override');
@@ -107,6 +108,21 @@ export function ImportConfigModal(props: {
         ) : (
           <Text size="sm" c="dimmed">
             Adds the alerts (and their files) from the uploaded config to your current config.
+          </Text>
+        )}
+        {props.onStreamElements && (
+          <Text size="xs" c="dimmed">
+            Coming from StreamElements?{' '}
+            <Anchor
+              size="xs"
+              component="button"
+              onClick={() => {
+                close();
+                props.onStreamElements?.();
+              }}
+            >
+              Import your alerts →
+            </Anchor>
           </Text>
         )}
         {error && (

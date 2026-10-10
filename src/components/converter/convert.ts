@@ -1,7 +1,7 @@
-import { Base64File, EventAlert, EventAlertConfig, EventMainType } from '../../../src/components/types';
-import { bytesToBase64, generateGUID, hashObjectSHA256 } from '../../../src/components/helper';
+import { Base64File, EventAlert, EventAlertConfig, EventMainType } from '../types';
+import { bytesToBase64, generateGUID, hashObjectSHA256 } from '../helper';
 import { ConversionPlan, DEFAULT_VOICE, MediaJob } from './mapping';
-import { download, MediaConverter, MediaResult } from '../../../src/components/media';
+import { download, MediaConverter, MediaResult } from '../media';
 
 export type FileStatus = 'queued' | 'downloading' | 'converting' | 'done' | 'error';
 
@@ -38,25 +38,6 @@ function emptyAlerts(): Record<EventMainType, EventAlert[]> {
     };
 }
 
-// Same default the editor creates in AlertConfigurator.ensureConfigStructure
-function readChatAlert(): EventAlert {
-    return {
-        name: 'Read Chat',
-        id: generateGUID(),
-        type: 'tts',
-        specifier: { type: 'min', amount: 0 },
-        restriction: 'none',
-        audio: {
-            tts: {
-                voiceType: 'default',
-                voiceSpecifier: '',
-                voiceParams: {},
-                text: '${username}: ${text}'
-            }
-        }
-    };
-}
-
 function uniqueName(baseName: string, ext: string, used: Set<string>): string {
     let name = `${baseName}.${ext}`;
     for (let counter = 1; used.has(name); counter++) {
@@ -74,7 +55,6 @@ export async function buildConfig(plan: ConversionPlan, files: Record<string, Ba
         if (alert.audio?.jingle && !files[alert.audio.jingle]) alert.audio.jingle = undefined;
         alerts[mainType].push(alert);
     }
-    alerts.tts.push(readChatAlert());
 
     const config: EventAlertConfig = {
         meta: {
