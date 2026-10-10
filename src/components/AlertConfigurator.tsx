@@ -84,6 +84,33 @@ const AVAILABLE_CLASSES = {
         colors: ['yellow', 'green', 'red', 'blue', 'orange', 'pink', 'teal', 'violett', 'text-dark']
     }
   };
+
+// Groups of classes where only one value can be active at a time
+const EXCLUSIVE_GROUPS: string[][] = [
+    AVAILABLE_CLASSES.position.alignment.filter(v => v.startsWith('align-')),
+    AVAILABLE_CLASSES.position.imageSizes,
+    AVAILABLE_CLASSES.position.imagePosition.filter(v => v.startsWith('image-fixed-')),
+    AVAILABLE_CLASSES.position.headlineSizes.filter(v => !v.startsWith('headline-w-')),
+    AVAILABLE_CLASSES.position.headlineSizes.filter(v => v.startsWith('headline-w-')),
+    AVAILABLE_CLASSES.position.textSizes.filter(v => !v.startsWith('text-w-')),
+    AVAILABLE_CLASSES.position.textSizes.filter(v => v.startsWith('text-w-')),
+    AVAILABLE_CLASSES.position.vertical,
+    AVAILABLE_CLASSES.position.horizontal,
+    AVAILABLE_CLASSES.layout.headlineFont.filter(v => v.startsWith('font-')),
+    AVAILABLE_CLASSES.layout.textFont.filter(v => v.startsWith('font-')),
+    AVAILABLE_CLASSES.layout.colors.filter(v => v !== 'text-dark'),
+    AVAILABLE_CLASSES.layout.effects.filter(v => v.startsWith('effect-')),
+    AVAILABLE_CLASSES.layout.effects.filter(v => v.startsWith('image-effect-')),
+    AVAILABLE_CLASSES.layout.effects.filter(v => v.startsWith('fade-text-')),
+    AVAILABLE_CLASSES.layout.effects.filter(v => v.startsWith('fade-image-'))
+];
+
+// Newly added values replace previously selected values of the same exclusive group
+function applyExclusiveGroups(prev: string[], next: string[]): string[] {
+    const added = next.filter(v => !prev.includes(v));
+    return next.filter(v => added.includes(v) ||
+        !added.some(a => EXCLUSIVE_GROUPS.some(g => g.includes(a) && g.includes(v))));
+}
   
 
 export function ConfirmDeleteView(props: {
@@ -373,7 +400,7 @@ export function AlertView(props: {
                             <MultiSelect
                                 label="Style"
                                 value={layout}
-                                onChange={setLayout}
+                                onChange={(v) => setLayout(prev => applyExclusiveGroups(prev, v))}
                                 data={[
                                     { group: 'Headline Font', items: AVAILABLE_CLASSES.layout.headlineFont.map(v => ({ value: v, label: v })) },
                                     { group: 'Text Font', items: AVAILABLE_CLASSES.layout.textFont.map(v => ({ value: v, label: v })) },
@@ -384,7 +411,7 @@ export function AlertView(props: {
                             <MultiSelect
                                 label="Position"
                                 value={position}
-                                onChange={setPosition}
+                                onChange={(v) => setPosition(prev => applyExclusiveGroups(prev, v))}
                                 data={[
                                     { group: 'Alignment', items: AVAILABLE_CLASSES.position.alignment.map(v => ({ value: v, label: v })) },
                                     { group: 'Image Sizes', items: AVAILABLE_CLASSES.position.imageSizes.map(v => ({ value: v, label: v })) },
