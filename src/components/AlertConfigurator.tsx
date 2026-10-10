@@ -1,6 +1,6 @@
 import { useContext, ReactElement, useState, useMemo, useRef, useEffect } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip, Flex, Box, Popover } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip, Flex, Box, Popover, SegmentedControl } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
@@ -13,7 +13,7 @@ import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 import { PreviewModal } from './PreviewModal';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
-import { buildSampleEvent, DEFAULT_SAMPLE_DATA, defaultEventSubtype, SampleData, toVisualAlert } from './preview/buildPreview';
+import { buildSampleEvent, centerPosition, DEFAULT_SAMPLE_DATA, defaultEventSubtype, SampleData, toVisualAlert } from './preview/buildPreview';
 
 export interface NavigationProps {
 }
@@ -261,30 +261,61 @@ export function AlertView(props: {
 
     // Live overlay preview of the alert being edited
     const previewRef = useRef<OverlayPreviewHandle>(null);
+    // 'style' shows the alert centered and zoomed without its screen position, 'full' the real overlay
+    const [previewMode, setPreviewMode] = useState<'style' | 'full'>('style');
+    const [styleZoom, setStyleZoom] = useState('2');
     const [sample, setSample] = useState<SampleData>({ ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount });
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const channel = appContext.alertConfig.meta.channel;
 
+    const previewAlert: EventAlert = useMemo(() => (previewMode === 'style' && draftAlert.visual)
+        ? { ...draftAlert, visual: { ...draftAlert.visual, position: centerPosition(draftAlert.visual.position) } }
+        : draftAlert, [draftAlert, previewMode]);
+
     useEffect(() => {
         const timeout = setTimeout(() => {
-            if (draftAlert.visual) {
-                previewRef.current?.show(toVisualAlert(draftAlert, channel, sample));
+            if (previewAlert.visual) {
+                previewRef.current?.show(toVisualAlert(previewAlert, channel, sample));
             } else {
                 previewRef.current?.clear();
             }
         }, 250);
         return () => clearTimeout(timeout);
-    }, [draftAlert.visual, channel, sample]);
+    }, [previewAlert.visual, channel, sample]);
 
     const playPreview = () => {
         const { event } = buildSampleEvent(channel, defaultEventSubtype(type), sample);
-        event.eventAlert = draftAlert;
+        event.eventAlert = previewAlert;
         previewRef.current?.playEvent(event);
     };
 
     const previewColumn = (
         <Stack gap="xs">
-            <OverlayPreviewFrame ref={previewRef} />
+            <Group justify="space-between" gap="xs">
+                <SegmentedControl
+                    size="xs"
+                    value={previewMode}
+                    onChange={(value) => setPreviewMode(value as 'style' | 'full')}
+                    data={[
+                        { value: 'style', label: 'Style' },
+                        { value: 'full', label: 'Full overlay' }
+                    ]}
+                />
+                {previewMode === 'style' && (
+                    <SegmentedControl
+                        size="xs"
+                        value={styleZoom}
+                        onChange={setStyleZoom}
+                        data={[
+                            { value: '1', label: '1x' },
+                            { value: '1.5', label: '1.5x' },
+                            { value: '2', label: '2x' },
+                            { value: '3', label: '3x' }
+                        ]}
+                    />
+                )}
+            </Group>
+            <OverlayPreviewFrame ref={previewRef} zoom={previewMode === 'style' ? Number(styleZoom) : 1} />
             <Group justify="space-between" gap="xs">
                 <Button size="xs" leftSection={<IconPlayerPlay size={14} />} onClick={playPreview}>Play with sound</Button>
                 <Group gap={4}>

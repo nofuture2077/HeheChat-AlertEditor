@@ -30,10 +30,10 @@ export interface OverlayPreviewHandle {
 /**
  * Embeds the real browsersource overlay in an iframe and feeds it the unsaved alert config via postMessage.
  */
-export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle>(function OverlayPreviewFrame(_props, ref) {
+export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle, { zoom?: number }>(function OverlayPreviewFrame({ zoom = 1 }, ref) {
   const appContext = useContext<AppContextProps>(AppContext);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { ref: sizeRef, width } = useElementSize();
+  const { ref: sizeRef, width, height } = useElementSize();
   const [ready, setReady] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [status, setStatus] = useState<{ audio: boolean, connected: boolean }>({ audio: true, connected: true });
@@ -106,7 +106,8 @@ export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle>(function Ove
   }));
 
   const src = `${import.meta.env.VITE_SINK_URL}#token=${appContext.sink}&preview=true&embed=true`;
-  const scale = width / OVERLAY_WIDTH;
+  // Zoom grows from the center, the container clips the overflow
+  const scale = (width / OVERLAY_WIDTH) * zoom;
 
   return (
     <Box
@@ -129,6 +130,9 @@ export const OverlayPreviewFrame = forwardRef<OverlayPreviewHandle>(function Ove
         title="Overlay preview"
         allow="autoplay"
         style={{
+          position: 'absolute',
+          left: (width - OVERLAY_WIDTH * scale) / 2,
+          top: (height - OVERLAY_HEIGHT * scale) / 2,
           width: OVERLAY_WIDTH,
           height: OVERLAY_HEIGHT,
           border: 0,

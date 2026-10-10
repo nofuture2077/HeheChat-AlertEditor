@@ -70,6 +70,19 @@ export function buildSampleEvent(channel: string, eventType: EventType, sample: 
   return { event, eventData };
 }
 
+const SCREEN_POSITION_CLASSES = ['top', 'middle', 'bottom', 'left', 'center', 'right'];
+
+/**
+ * Replaces the screen position (vertical/horizontal) with a centered one, keeping all other layout classes.
+ */
+export function centerPosition(position?: string): string {
+  return [
+    ...(position || '').split(' ').filter(p => p && !SCREEN_POSITION_CLASSES.includes(p)),
+    'middle',
+    'center',
+  ].join(' ');
+}
+
 /**
  * Static visual alert (no audio) for the overlay preview, with variables filled from sample data.
  */
