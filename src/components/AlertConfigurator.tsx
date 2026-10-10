@@ -67,8 +67,8 @@ const AVAILABLE_CLASSES = {
         horizontal: ['left', 'center', 'right']
     },
     layout: {
-        headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'font-headline-fjallaone', 'font-headline-ericaone', 'font-headline-daysone', 'font-headline-pressstart2p', 'font-headline-ultra', 'headline-uppercase'],
-        textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'font-text-fjallaone', 'font-text-ericaone', 'font-text-daysone', 'font-text-pressstart2p', 'font-text-ultra', 'text-uppercase'],
+        headlineFont: ['font-headline-default', 'font-headline-bangers', 'font-headline-molle', 'font-headline-fjallaone', 'font-headline-ericaone', 'font-headline-daysone', 'font-headline-pressstart2p', 'font-headline-ultra', 'font-headline-abrilfatface', 'font-headline-cinzeldecorative', 'font-headline-unifrakturcook', 'font-headline-lobster', 'font-headline-permanentmarker', 'font-headline-creepster', 'font-headline-monoton', 'font-headline-fasterone', 'font-headline-orbitron', 'font-headline-blackopsone', 'font-headline-bungee', 'font-headline-rubikglitch', 'font-headline-specialelite', 'headline-uppercase'],
+        textFont: ['font-text-default', 'font-text-bangers', 'font-text-molle', 'font-text-fjallaone', 'font-text-ericaone', 'font-text-daysone', 'font-text-pressstart2p', 'font-text-ultra', 'font-text-abrilfatface', 'font-text-cinzeldecorative', 'font-text-unifrakturcook', 'font-text-lobster', 'font-text-permanentmarker', 'font-text-creepster', 'font-text-monoton', 'font-text-fasterone', 'font-text-orbitron', 'font-text-blackopsone', 'font-text-bungee', 'font-text-rubikglitch', 'font-text-specialelite', 'text-uppercase'],
         effects: ['effect-bounce', 'effect-wave', 'effect-shake', 'effect-pulse', 'effect-glitch', 'effect-party', 
             'effect-hallucination', 'effect-psychedelic', 'effect-rainbow', 'effect-neon', 'effect-glitch-color', 'effect-disco', 'effect-trippy',
              'image-effect-bounce', 'image-effect-shake', 'image-effect-pulse', 'image-effect-wobble', 'image-effect-swing', 'image-effect-rotate', 
