@@ -13,7 +13,7 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconMusic } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
-import { previewTTS } from './helper';
+import { parseVolume, previewTTS } from './helper';
 
 interface DefaultVoiceEditorProps {
     opened: boolean;
@@ -28,6 +28,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
     const [voiceType, setVoiceType] = useState<'ai' | 'google'>(currentDefaultVoice?.voiceType || 'google');
     const [voice, setVoice] = useState<string>(currentDefaultVoice?.voiceSpecifier || '');
     const [speed, setSpeed] = useState<number>(Number(currentDefaultVoice?.voiceParams?.speed) || 1.0);
+    const [volume, setVolume] = useState<number>(parseVolume(currentDefaultVoice?.voiceParams?.volume));
 
     // Initialize selectedLanguage based on the existing voice if available
     const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
@@ -50,6 +51,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                 setVoiceType(currentDefaultVoice.voiceType || 'google');
                 setVoice(currentDefaultVoice.voiceSpecifier || '');
                 setSpeed(Number(currentDefaultVoice.voiceParams?.speed) || 1.0);
+                setVolume(parseVolume(currentDefaultVoice.voiceParams?.volume));
 
                 if (currentDefaultVoice.voiceType === 'google' && currentDefaultVoice.voiceSpecifier) {
                     const voiceData = appContext.googleVoices.find(v => v.name === currentDefaultVoice.voiceSpecifier);
@@ -93,7 +95,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
         config.data.config.defaultVoice = {
             voiceType,
             voiceSpecifier: voice,
-            voiceParams: { speed }
+            voiceParams: { speed, volume }
         };
 
         appContext.setAlertConfig(config);
@@ -106,6 +108,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
         setVoiceType(currentDefaultVoice?.voiceType || 'google');
         setVoice(currentDefaultVoice?.voiceSpecifier || '');
         setSpeed(Number(currentDefaultVoice?.voiceParams?.speed) || 1.0);
+        setVolume(parseVolume(currentDefaultVoice?.voiceParams?.volume));
 
         if (currentDefaultVoice?.voiceType === 'google' && currentDefaultVoice?.voiceSpecifier) {
             const voiceData = appContext.googleVoices.find(v => v.name === currentDefaultVoice?.voiceSpecifier);
@@ -127,7 +130,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
             appContext.alertConfig.meta.channel,
             appContext.sink || '',
             undefined, // No need to pass defaultVoice since we're previewing the voice directly
-            speed
+            speed,
+            volume
         );
     };
 
@@ -274,6 +278,23 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                                 { value: 1.0, label: '1.0x' },
                                 { value: 1.5, label: '1.5x' },
                                 { value: 2.0, label: '2.0x' }
+                            ]}
+                            mb="md"
+                        />
+
+                        <Text size="sm" fw={500}>Volume</Text>
+                        <Slider
+                            value={volume}
+                            onChange={(value) => setVolume(value)}
+                            min={0}
+                            max={3.0}
+                            step={0.05}
+                            label={(value) => Math.round(value * 100) + '%'}
+                            marks={[
+                                { value: 0, label: '0%' },
+                                { value: 1.0, label: '100%' },
+                                { value: 2.0, label: '200%' },
+                                { value: 3.0, label: '300%' }
                             ]}
                             mb="md"
                         />

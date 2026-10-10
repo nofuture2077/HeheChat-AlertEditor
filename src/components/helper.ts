@@ -33,6 +33,15 @@ export function bytesToBase64(bytes: Uint8Array): string {
     return btoa(binary);
 }
 
+export function base64ToBytes(base64: string): Uint8Array {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
 export function getQueryVariable(query: String, variable: String): string | undefined {
     var vars = query.split('&');
     for (var i = 0; i < vars.length; i++) {
@@ -91,6 +100,12 @@ export function formatString(messageTemplate: string, args: Record<string, any>)
     });
 }
 
+// TTS volume is stored in voiceParams.volume as a gain factor, 1.0 when not set
+export function parseVolume(value: string | number | undefined): number {
+    const volume = Number(value);
+    return value !== undefined && value !== '' && Number.isFinite(volume) ? volume : 1.0;
+}
+
 export async function previewTTS(
     text: string, 
     voiceType: 'ai' | 'google' | 'none' | 'default', 
@@ -98,7 +113,8 @@ export async function previewTTS(
     channel: string, 
     sink: string,
     defaultVoice?: { voiceType: 'ai' | 'google'; voiceSpecifier: string; voiceParams: Record<string, string | number> },
-    speed?: number
+    speed?: number,
+    volume?: number
 ): Promise<void> {
     // Handle default voice type
     let actualVoiceType = voiceType;
@@ -118,6 +134,11 @@ export async function previewTTS(
         console.log('TTS is disabled (voice type: none)');
         return;
     }
+
+    // Create the context before the first await so it is started by the click, a context created
+    // after the fetch can stay suspended and never play
+    const audioContext = new AudioContext();
+    audioContext.resume();
     
     // Replace variables in the text
     const previewText = formatString(text, {
@@ -145,13 +166,18 @@ export async function previewTTS(
         const audioBlob = await response.json();
 
         
-        // Create and play audio element
+        // Create and play audio element, routed through a gain node so volumes above 100% work
         const audio = new Audio("data:audio/mp3;base64," + audioBlob.audioContent);
         audio.playbackRate = speed ?? 1.0;
+        const gain = audioContext.createGain();
+        gain.gain.value = volume ?? 1.0;
+        audioContext.createMediaElementSource(audio).connect(gain).connect(audioContext.destination);
+        audio.addEventListener('ended', () => audioContext.close(), { once: true });
 
         // Play the audio
         await audio.play();
     } catch (error) {
+        audioContext.close();
         console.error('Error playing TTS preview:', error);
         alert('Failed to play TTS preview. See console for details.');
     }

@@ -25,6 +25,9 @@ const FORMATS: Record<string, SourceFormat> = {
     mp4: { mime: 'video/mp4', ext: 'mp4', type: 'video' }
 };
 
+// EBU R128 loudness normalization, loudnorm upsamples to 192kHz so resample back
+const LOUDNORM = ['-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', '48000'];
+
 const ascii = (bytes: Uint8Array, start: number, length: number) =>
     String.fromCharCode(...bytes.subarray(start, start + length));
 
@@ -129,25 +132,53 @@ export class MediaConverter {
         this.ffmpeg = this.create();
     }
 
-    async convert(bytes: Uint8Array, url: string, onProgress: (progress: number) => void): Promise<MediaResult> {
+    async convert(bytes: Uint8Array, url: string, onProgress: (progress: number) => void,
+        options: { normalize?: boolean } = {}): Promise<MediaResult & { normalized: boolean }> {
         const source = detectFormat(bytes, url);
         if (!source) {
             throw new Error('Unknown file format');
         }
 
+        if (options.normalize && source.type !== 'image') {
+            try {
+                return { ...await this.convertFormat(bytes, source, onProgress, true), normalized: true };
+            } catch (error) {
+                // e.g. a video without an audio stream, convert it without normalization
+                console.warn('Normalizing failed, converting without it', error);
+            }
+        }
+        return { ...await this.convertFormat(bytes, source, onProgress, false), normalized: false };
+    }
+
+    // Normalizes the audio of an already converted file and keeps its format
+    async normalize(bytes: Uint8Array, mime: string, onProgress: (progress: number) => void): Promise<MediaResult> {
+        const source = Object.values(FORMATS).find(format => format.mime === mime) || detectFormat(bytes, '');
+        if (!source || source.type === 'image') {
+            throw new Error('Only audio and video files can be normalized');
+        }
+        return this.convertFormat(bytes, source, onProgress, true);
+    }
+
+    private convertFormat(bytes: Uint8Array, source: SourceFormat, onProgress: (progress: number) => void,
+        normalize: boolean): Promise<MediaResult> {
+        const loudnorm = normalize ? LOUDNORM : [];
         switch (source.ext) {
             case 'mp3':
-            case 'webp':
+                if (!normalize) return Promise.resolve({ data: bytes, ...source });
+                return this.run(bytes, source, onProgress, FORMATS.mp3, ['-vn', ...loudnorm, '-c:a', 'libmp3lame', '-b:a', '192k']);
             case 'webm':
-                return { data: bytes, ...source };
+                if (!normalize) return Promise.resolve({ data: bytes, ...source });
+                return this.run(bytes, source, onProgress, FORMATS.webm, ['-c:v', 'copy', ...loudnorm, '-c:a', 'libvorbis']);
+            case 'webp':
+                return Promise.resolve({ data: bytes, ...source });
             case 'mp4':
                 // libopus and libvpx-vp9 crash in the ffmpeg.wasm core, VP8 + Vorbis work
                 return this.run(bytes, source, onProgress, FORMATS.webm,
-                    ['-c:v', 'libvpx', '-crf', '10', '-b:v', '2M', '-deadline', 'good', '-cpu-used', '4', '-c:a', 'libvorbis']);
+                    ['-c:v', 'libvpx', '-crf', '10', '-b:v', '2M', '-deadline', 'good', '-cpu-used', '4', ...loudnorm, '-c:a', 'libvorbis']);
             case 'ogg':
             case 'wav':
                 return this.run(bytes, source, onProgress, FORMATS.mp3,
-                    ['-vn', '-c:a', 'libmp3lame', '-b:a', '192k']);
+                    ['-vn', ...loudnorm, '-c:a', 'libmp3lame', '-b:a', '192k']);
             case 'gif':
                 if (isAnimatedGif(bytes)) {
                     return this.run(bytes, source, onProgress, FORMATS.webp,

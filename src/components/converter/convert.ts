@@ -102,12 +102,12 @@ export async function runConversion(
     const usedNames = new Set<string>();
     const warnings = [...plan.skipped.map(s => `Skipped ${s}`)];
 
-    const convertJob = async (job: MediaJob, index: number): Promise<MediaResult> => {
+    const convertJob = async (job: MediaJob, index: number): Promise<MediaResult & { normalized?: boolean }> => {
         update(index, { status: 'downloading', progress: 0 });
         const bytes = await download(job.url, p => update(index, { progress: p }), signal);
         update(index, { status: 'converting', progress: 0, originalSize: bytes.length });
         try {
-            return await converter.convert(bytes, job.url, p => update(index, { progress: p }));
+            return await converter.convert(bytes, job.url, p => update(index, { progress: p }), { normalize: true });
         } catch (error) {
             if (signal?.aborted) throw error;
             warnings.push(`${job.baseName}: conversion failed, kept original file (${(error as Error).message})`);
@@ -128,7 +128,8 @@ export async function runConversion(
                     type: result.type,
                     name,
                     mime: result.mime,
-                    data: bytesToBase64(result.data)
+                    data: bytesToBase64(result.data),
+                    normalized: result.normalized || undefined
                 };
                 update(index, { status: 'done', progress: 1, name, finalSize: result.data.length });
             } catch (error) {

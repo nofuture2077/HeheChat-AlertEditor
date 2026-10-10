@@ -106,6 +106,8 @@ export type Base64File = {
     name: string;
     mime: string;
     data: string;
+    // Audio level was loudness normalized on upload
+    normalized?: boolean;
 }
 
 export type Base64ImageFile = {

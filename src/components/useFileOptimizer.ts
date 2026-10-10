@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { bytesToBase64 } from './helper';
+import { base64ToBytes, bytesToBase64 } from './helper';
+import type { Base64File } from './types';
 import type { MediaConverter } from './media';
 
 export type FileType = 'audio' | 'image' | 'video' | 'application/zip';
@@ -13,6 +14,7 @@ export type OptimizedFile = {
     originalSize: number;
     size: number;
     converted: boolean;
+    normalized: boolean;
     warning?: string;
 };
 
@@ -35,7 +37,7 @@ export function useFileOptimizer() {
     const [busy, setBusy] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const optimize = async (file: File): Promise<OptimizedFile> => {
+    const optimize = async (file: File, options: { normalize?: boolean } = {}): Promise<OptimizedFile> => {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const original: OptimizedFile = {
             name: file.name,
@@ -45,7 +47,8 @@ export function useFileOptimizer() {
             originalName: file.name,
             originalSize: file.size,
             size: file.size,
-            converted: false
+            converted: false,
+            normalized: false
         };
         if (file.type === 'application/zip') {
             return original;
@@ -54,9 +57,12 @@ export function useFileOptimizer() {
         setBusy(true);
         setProgress(0);
         try {
-            const result = await (await getConverter()).convert(bytes, file.name, setProgress);
+            const result = await (await getConverter()).convert(bytes, file.name, setProgress, options);
+            const warning = options.normalize && !result.normalized && result.type !== 'image'
+                ? 'The audio level could not be normalized, the file is used without normalization.'
+                : undefined;
             if (result.data === bytes) {
-                return { ...original, mime: result.mime, type: result.type };
+                return { ...original, mime: result.mime, type: result.type, warning };
             }
             return {
                 name: withExtension(file.name, result.ext),
@@ -66,7 +72,9 @@ export function useFileOptimizer() {
                 originalName: file.name,
                 originalSize: file.size,
                 size: result.data.length,
-                converted: true
+                converted: true,
+                normalized: result.normalized,
+                warning
             };
         } catch (error) {
             console.error('Converting file failed', error);
@@ -80,5 +88,17 @@ export function useFileOptimizer() {
         }
     };
 
-    return { optimize, busy, progress };
+    // Normalizes the audio of an uploaded file in place, the id stays the same so alert references keep working
+    const normalizeExisting = async (file: Base64File): Promise<Base64File> => {
+        setBusy(true);
+        setProgress(0);
+        try {
+            const result = await (await getConverter()).normalize(base64ToBytes(file.data), file.mime, setProgress);
+            return { ...file, mime: result.mime, data: bytesToBase64(result.data), normalized: true };
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return { optimize, normalizeExisting, busy, progress };
 }

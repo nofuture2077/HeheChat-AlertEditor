@@ -4,9 +4,9 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconUserEdit } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconUserEdit, IconVolume } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
-import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize } from './helper';
+import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize, parseVolume } from './helper';
 import { OptimizedFile, useFileOptimizer } from './useFileOptimizer';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
@@ -238,6 +238,7 @@ export function AlertView(props: {
     };
     const [voice, setVoice] = useState<string>(props.data?.audio?.tts?.voiceSpecifier || '');
     const [speed, setSpeed] = useState<number>(Number(props.data?.audio?.tts?.voiceParams?.speed) || 1.0);
+    const [volume, setVolume] = useState<number>(parseVolume(props.data?.audio?.tts?.voiceParams?.volume));
 
     // Initialize selectedLanguage based on the existing voice if available
     const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
@@ -281,10 +282,10 @@ export function AlertView(props: {
                 text: ttsText,
                 voiceType,
                 voiceSpecifier: voice,
-                voiceParams: (voiceType === 'default' ? {} : { speed }) as Record<string, string | number>
+                voiceParams: (voiceType === 'default' ? {} : { speed, volume }) as Record<string, string | number>
             } : undefined
         }
-    }), [id, name, type, specType, specAmount, specText, specAttribute, nummberSpecType, minDuration, headline, text, image, position, layout, jingle, ttsText, voiceType, voice, speed]);
+    }), [id, name, type, specType, specAmount, specText, specAttribute, nummberSpecType, minDuration, headline, text, image, position, layout, jingle, ttsText, voiceType, voice, speed, volume]);
 
     // Live overlay preview of the alert being edited
     const previewRef = useRef<OverlayPreviewHandle>(null);
@@ -566,6 +567,22 @@ export function AlertView(props: {
                                                 ]}
                                                 mb="md"
                                             />
+                                            <Text size="sm" fw={500}>Volume</Text>
+                                            <Slider
+                                                value={volume}
+                                                onChange={(value) => setVolume(value)}
+                                                min={0}
+                                                max={3.0}
+                                                step={0.05}
+                                                label={(value) => Math.round(value * 100) + '%'}
+                                                marks={[
+                                                    { value: 0, label: '0%' },
+                                                    { value: 1.0, label: '100%' },
+                                                    { value: 2.0, label: '200%' },
+                                                    { value: 3.0, label: '300%' }
+                                                ]}
+                                                mb="md"
+                                            />
                                         </>
                                     )}
                                     <Group align="flex-start">
@@ -593,7 +610,10 @@ export function AlertView(props: {
                                                 appContext.alertConfig.data?.config?.defaultVoice,
                                                 voiceType === 'default'
                                                     ? Number(appContext.alertConfig.data?.config?.defaultVoice?.voiceParams?.speed) || 1.0
-                                                    : speed
+                                                    : speed,
+                                                voiceType === 'default'
+                                                    ? parseVolume(appContext.alertConfig.data?.config?.defaultVoice?.voiceParams?.volume)
+                                                    : volume
                                             )}
                                         >
                                             <IconMusic size={18} />
@@ -687,6 +707,30 @@ export function AlertView(props: {
 
 const formatLabel = (name: string) => name.split('.').pop()?.toUpperCase() || '';
 
+const NORMALIZE_KEY = 'hehe-normalize-audio';
+
+// Remembers whether uploads should be loudness normalized, on by default
+function useNormalizePreference(): [boolean, (value: boolean) => void] {
+    const [normalize, setNormalize] = useState(() => localStorage.getItem(NORMALIZE_KEY) !== 'false');
+    return [normalize, (value: boolean) => {
+        localStorage.setItem(NORMALIZE_KEY, String(value));
+        setNormalize(value);
+    }];
+}
+
+function NormalizeCheckbox(props: { checked: boolean; disabled: boolean; onChange: (value: boolean) => void }) {
+    return (
+        <Checkbox
+            mb="xs"
+            label="Normalize audio level"
+            description="Evens out the loudness of sounds and videos so all alerts play at a similar volume"
+            checked={props.checked}
+            disabled={props.disabled}
+            onChange={(ev) => props.onChange(ev.currentTarget.checked)}
+        />
+    );
+}
+
 function OptimizeStatus(props: { busy: boolean; progress: number; result: OptimizedFile | null; error: string | null }) {
     if (props.busy) {
         return (
@@ -700,12 +744,12 @@ function OptimizeStatus(props: { busy: boolean; progress: number; result: Optimi
         return <Alert color="red" title="Unsupported File" icon={<IconAlertTriangle size={16} />} mt="sm">{props.error}</Alert>;
     }
     if (props.result?.warning) {
-        return <Alert color="yellow" title="Not Optimized" icon={<IconAlertTriangle size={16} />} mt="sm">{props.result.warning}</Alert>;
+        return <Alert color="yellow" title="Warning" icon={<IconAlertTriangle size={16} />} mt="sm">{props.result.warning}</Alert>;
     }
     if (props.result?.converted) {
         return (
             <Text size="sm" c="dimmed" mt="xs">
-                Converted {formatLabel(props.result.originalName)} {formatFileSize(props.result.originalSize)} → {formatLabel(props.result.name)} {formatFileSize(props.result.size)}
+                {props.result.normalized ? 'Normalized and converted' : 'Converted'} {formatLabel(props.result.originalName)} {formatFileSize(props.result.originalSize)} → {formatLabel(props.result.name)} {formatFileSize(props.result.size)}
             </Text>
         );
     }
@@ -729,6 +773,8 @@ export function UploadFileView(props: {
     const [optimized, setOptimized] = useState<OptimizedFile | null>(null);
     const [optimizeError, setOptimizeError] = useState<string | null>(null);
     const { optimize, busy, progress } = useFileOptimizer();
+    const [normalize, setNormalize] = useNormalizePreference();
+    const [lastFile, setLastFile] = useState<File | null>(null);
     const appContext = useContext<AppContextProps>(AppContext);
 
     // Calculate current config size
@@ -789,13 +835,14 @@ export function UploadFileView(props: {
         return true;
     };
 
-    const onSelect = async function (file: File) {
+    const onSelect = async function (file: File, normalizeAudio = normalize) {
+        setLastFile(file);
         setData("");
         setOptimized(null);
         setOptimizeError(null);
         let result: OptimizedFile;
         try {
-            result = await optimize(file);
+            result = await optimize(file, { normalize: normalizeAudio });
         } catch (error) {
             setOptimizeError(error instanceof Error ? error.message : String(error));
             return;
@@ -829,7 +876,11 @@ export function UploadFileView(props: {
     return (
         <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false}>
             <Fieldset legend={props.title}>
-                <DropZone onSelect={onSelect}></DropZone>
+                <NormalizeCheckbox checked={normalize} disabled={busy} onChange={(value) => {
+                    setNormalize(value);
+                    if (lastFile) onSelect(lastFile, value);
+                }} />
+                <DropZone onSelect={(file) => onSelect(file)}></DropZone>
                 <OptimizeStatus busy={busy} progress={progress} result={optimized} error={optimizeError} />
                 <TextInput label="Id" value={id} readOnly disabled></TextInput>
                 <TextInput label="Type" value={mime} readOnly disabled></TextInput>
@@ -883,7 +934,7 @@ export function UploadFileView(props: {
                     <Button 
                         variant="filled" 
                         color="pink" 
-                        onClick={() => props.confirm({ id, name, mime, type, data })}
+                        onClick={() => props.confirm({ id, name, mime, type, data, normalized: optimized?.normalized || undefined })}
                         disabled={busy || fileSizeError || !data || !!nameError || !name}
                     >
                         Upload
@@ -915,6 +966,8 @@ export function ReplaceFileView(props: {
     const [optimized, setOptimized] = useState<OptimizedFile | null>(null);
     const [optimizeError, setOptimizeError] = useState<string | null>(null);
     const { optimize, busy, progress } = useFileOptimizer();
+    const [normalize, setNormalize] = useNormalizePreference();
+    const [lastFile, setLastFile] = useState<File | null>(null);
     const appContext = useContext<AppContextProps>(AppContext);
 
     // Calculate current config size
@@ -956,13 +1009,14 @@ export function ReplaceFileView(props: {
         return true;
     };
 
-    const onSelect = async function (file: File) {
+    const onSelect = async function (file: File, normalizeAudio = normalize) {
+        setLastFile(file);
         setData("");
         setOptimized(null);
         setOptimizeError(null);
         let result: OptimizedFile;
         try {
-            result = await optimize(file);
+            result = await optimize(file, { normalize: normalizeAudio });
         } catch (error) {
             setOptimizeError(error instanceof Error ? error.message : String(error));
             return;
@@ -1008,7 +1062,11 @@ export function ReplaceFileView(props: {
                 <Text size="sm" mb="xs" c="dimmed">
                     Replacing "{props.existingFile.name}" — every alert currently using this file will automatically use the new content.
                 </Text>
-                <DropZone onSelect={onSelect}></DropZone>
+                <NormalizeCheckbox checked={normalize} disabled={busy} onChange={(value) => {
+                    setNormalize(value);
+                    if (lastFile) onSelect(lastFile, value);
+                }} />
+                <DropZone onSelect={(file) => onSelect(file)}></DropZone>
                 <OptimizeStatus busy={busy} progress={progress} result={optimized} error={optimizeError} />
                 <TextInput label="Id" value={id} readOnly disabled style={{ display: 'none' }}></TextInput>
                 <TextInput label="Type" value={mime || props.existingFile.mime} readOnly disabled></TextInput>
@@ -1062,11 +1120,84 @@ export function ReplaceFileView(props: {
                     <Button
                         variant="filled"
                         color="pink"
-                        onClick={() => props.confirm({ id, name, mime: mime || props.existingFile.mime, type, data })}
+                        onClick={() => props.confirm({ id, name, mime: mime || props.existingFile.mime, type, data, normalized: optimized?.normalized || undefined })}
                         disabled={busy || fileSizeError || !data || !!nameError || !name}
                     >
                         Replace
                     </Button>
+                </Group>
+            </Fieldset>
+        </Modal>);
+}
+
+
+// Normalizes the audio of already uploaded files one after another, each finished file is saved right away
+export function NormalizeFilesView(props: {
+    files: Base64File[];
+    close: () => void;
+    save: (file: Base64File) => void;
+}) {
+    const { normalizeExisting, progress } = useFileOptimizer();
+    const [status, setStatus] = useState<Record<string, 'pending' | 'running' | 'done' | 'failed'>>(
+        () => Object.fromEntries(props.files.map(file => [file.id, 'pending' as const]))
+    );
+    const [running, setRunning] = useState(false);
+    const cancelled = useRef(false);
+
+    const start = async () => {
+        setRunning(true);
+        cancelled.current = false;
+        for (const file of props.files) {
+            if (cancelled.current) break;
+            setStatus(prev => ({ ...prev, [file.id]: 'running' }));
+            try {
+                props.save(await normalizeExisting(file));
+                setStatus(prev => ({ ...prev, [file.id]: 'done' }));
+            } catch (error) {
+                console.error('Normalizing file failed', file.name, error);
+                setStatus(prev => ({ ...prev, [file.id]: 'failed' }));
+            }
+        }
+        setRunning(false);
+    };
+
+    const finished = !running && Object.values(status).every(x => x === 'done' || x === 'failed');
+    const statusBadge = {
+        pending: <Badge color="gray" variant="light">Pending</Badge>,
+        running: <Badge color="blue" variant="light">Normalizing</Badge>,
+        done: <Badge color="green" variant="light">Done</Badge>,
+        failed: <Badge color="red" variant="light">Failed</Badge>
+    };
+
+    return (
+        <Modal key="normalize-files-view" opened={true} onClose={() => { cancelled.current = true; props.close(); }} withCloseButton={false}>
+            <Fieldset legend={props.files.length === 1 ? 'Normalize: ' + props.files[0].name : 'Normalize Audio Level'}>
+                <Text size="sm" mb="xs" c="dimmed">
+                    Evens out the loudness so all alerts play at a similar volume. The files are replaced, every alert using them keeps working.
+                </Text>
+                <Stack gap="xs">
+                    {props.files.map(file => (
+                        <Stack gap={4} key={file.id}>
+                            <Group justify="space-between" wrap="nowrap">
+                                <Text size="sm" truncate>{file.name}</Text>
+                                {statusBadge[status[file.id]]}
+                            </Group>
+                            {status[file.id] === 'running' && <Progress value={progress * 100} size="sm" animated />}
+                        </Stack>
+                    ))}
+                </Stack>
+                {Object.values(status).includes('failed') && !running && (
+                    <Alert color="yellow" icon={<IconAlertTriangle size={16} />} mt="sm">
+                        Some files could not be normalized (e.g. videos without sound), they were left unchanged.
+                    </Alert>
+                )}
+                <Group justify="space-around" mt="md">
+                    <Button onClick={() => { cancelled.current = true; props.close(); }}>{finished ? 'Close' : 'Cancel'}</Button>
+                    {!finished && (
+                        <Button variant="filled" color="pink" onClick={start} loading={running} disabled={running}>
+                            Normalize
+                        </Button>
+                    )}
                 </Group>
             </Fieldset>
         </Modal>);
@@ -1188,6 +1319,16 @@ export function AlertConfigurator(props: NavigationProps) {
         setConfirmDeleteComponent(undefined);
     }
 
+    // Unlike replaceFile this keeps the modal open, NormalizeFilesView saves several files in a row
+    const saveNormalizedFile = function (data: Base64File) {
+        const config = appContext.alertConfig;
+        config.data!.files[data.id] = data;
+        appContext.setAlertConfig(config);
+    }
+
+    const canNormalize = (file: Base64File) => file.type === 'audio' || file.type === 'video';
+    const unnormalizedFiles = Object.values(appContext.alertConfig.data?.files || {}).filter(file => canNormalize(file) && !file.normalized);
+
     const deleteAlert = function (alertId: string) {
         const config = appContext.alertConfig;
         Object.keys(config.data!.alerts).forEach((evType) => {
@@ -1210,6 +1351,11 @@ export function AlertConfigurator(props: NavigationProps) {
 
     function uploadFileView(title: string, confirm: (data: Base64File) => void) {
         setConfirmDeleteComponent(<UploadFileView title={title} close={confirmDeleteHandler.close} confirm={confirm} />);
+        confirmDeleteHandler.open();
+    }
+
+    function normalizeFilesView(files: Base64File[]) {
+        setConfirmDeleteComponent(<NormalizeFilesView files={files} close={confirmDeleteHandler.close} save={saveNormalizedFile} />);
         confirmDeleteHandler.open();
     }
 
@@ -1375,6 +1521,17 @@ export function AlertConfigurator(props: NavigationProps) {
             }}
             rightSection={
                 <Group gap={0}>
+                    {canNormalize(file) && !file.normalized && (
+                        <Tooltip label="Normalize audio level">
+                            <ActionIcon variant='subtle' aria-label="Normalize audio level" onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                normalizeFilesView([file]);
+                            }}>
+                                <IconVolume />
+                            </ActionIcon>
+                        </Tooltip>
+                    )}
                     <Tooltip label="Replace file">
                         <ActionIcon variant='subtle' aria-label="Replace file" onClick={(e) => {
                             e.preventDefault();
@@ -1403,7 +1560,7 @@ export function AlertConfigurator(props: NavigationProps) {
             } 
             key={file.id} 
             label={file.name}
-            description={`${formatFileSize(fileSize)} • Used in ${usageCount} alert${usageCount !== 1 ? 's' : ''}`}
+            description={`${formatFileSize(fileSize)} • Used in ${usageCount} alert${usageCount !== 1 ? 's' : ''}${file.normalized ? ' • Normalized' : ''}`}
         />
     })}</>;
 
@@ -1488,6 +1645,14 @@ export function AlertConfigurator(props: NavigationProps) {
                 key="files"
                 leftSection={<IconFile />}
             >
+                {unnormalizedFiles.length > 0 && (
+                    <NavLink
+                        leftSection={<IconVolume />}
+                        label={`Normalize audio level (${unnormalizedFiles.length})`}
+                        description="Even out the loudness of all sounds and videos"
+                        onClick={() => normalizeFilesView(unnormalizedFiles)}
+                    />
+                )}
                 {fileNodes}
             </NavLink>
         )}
