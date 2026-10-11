@@ -5,7 +5,7 @@ import { notifications } from '@mantine/notifications';
 import { EventMainType, EventType, getAlert, EventAlert } from './types';
 import { AppContext, AppContextProps } from '../ApplicationContext';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
-import { buildSampleEvent, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, SampleData } from './preview/buildPreview';
+import { buildSampleEvent, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, HYPETRAIN_TYPES, HypetrainType, SampleData } from './preview/buildPreview';
 
 interface PreviewModalProps {
   opened: boolean;
@@ -98,6 +98,15 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
               />
             )}
 
+            {mainType === 'hypetrain' && (
+              <Select
+                label="Hypetrain Event"
+                data={HYPETRAIN_TYPES}
+                value={sample.hypetrainType}
+                onChange={(value) => updateSample({ hypetrainType: (value || sample.hypetrainType) as HypetrainType })}
+              />
+            )}
+
             <TextInput
               label="Username"
               value={sample.username}
@@ -114,10 +123,19 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
 
             {mainType !== 'subgiftb' && (
               <NumberInput
-                label="Amount"
+                label={mainType === 'hypetrain' ? 'Level' : 'Amount'}
                 value={sample.amount}
                 onChange={(val) => updateSample({ amount: val as number | '' })}
                 min={0}
+              />
+            )}
+
+            {CURRENCY_TYPES.includes(mainType) && (
+              <TextInput
+                label="Currency"
+                description="Currency code, e.g. EUR or USD"
+                value={sample.currency}
+                onChange={(e) => updateSample({ currency: e.target.value })}
               />
             )}
 

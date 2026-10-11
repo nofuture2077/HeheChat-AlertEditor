@@ -88,7 +88,28 @@ const formatFunctions: { [key: string]: (value: any) => string } = {
     uppercase: (value: string) => value.toUpperCase(),
     lowercase: (value: string) => value.toLowerCase(),
     duration: (value: string) => formatDuration(Number(value) * 1000),
+    currency: (value: string) => formatCurrency(value),
 };
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    CNY: '¥',
+    INR: '₹',
+    RUB: '₽',
+    KRW: '₩',
+    BRL: 'R$',
+    CAD: 'C$',
+    AUD: 'A$',
+    CHF: 'CHF',
+};
+
+// Same mapping as the overlay's ${currency:currency} formatter
+export function formatCurrency(value: string): string {
+    return CURRENCY_SYMBOLS[value] || value || '';
+}
 
 export function formatString(messageTemplate: string, args: Record<string, any>): string {
     return messageTemplate.replace(/\${(\w+)(?::(\w+))?}/g, (_, key, formatFunction) => {

@@ -13,7 +13,7 @@ import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 import { PreviewModal } from './PreviewModal';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
-import { buildSampleEvent, centerPosition, DEFAULT_SAMPLE_DATA, defaultEventSubtype, SampleData, toVisualAlert } from './preview/buildPreview';
+import { buildSampleEvent, centerPosition, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, HYPETRAIN_TYPES, HypetrainType, SampleData, toVisualAlert } from './preview/buildPreview';
 
 export interface NavigationProps {
 }
@@ -254,7 +254,11 @@ export function AlertView(props: {
     
     const nummberSpecType = specType === 'min' || specType === 'exact' || specType === 'mult';
 
-    const InfoText = "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
+    const InfoText = CURRENCY_TYPES.includes(type)
+        ? "You can use ${username}, ${usernameTo}, ${amount}, ${amount2}, ${currency} (or ${currency:currency} for the symbol) & ${text} variables inside the text."
+        : type === 'hypetrain'
+            ? "You can use ${username}, ${amount}, ${level}, ${type} & ${text} variables inside the text. Use a 'matches' trigger on 'type' with hypeTrainBegin, hypeTrainLevel or hypeTrainEnd to target start, level up or end."
+            : "You can use ${username}, ${usernameTo}, ${amount}, ${amount2} & ${text} variables inside the text.";
     const voiceTypes = config.aiVoices.length ? ['default', 'ai', 'google', 'none'] : ['default', 'google', 'none'];
 
     const draftAlert: EventAlert = useMemo(() => ({
@@ -292,7 +296,10 @@ export function AlertView(props: {
     // 'style' shows the alert centered and zoomed without its screen position, 'full' the real overlay
     const [previewMode, setPreviewMode] = useState<'style' | 'full'>('style');
     const [styleZoom, setStyleZoom] = useState('2');
-    const [sample, setSample] = useState<SampleData>({ ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount });
+    const [sample, setSample] = useState<SampleData>(() => {
+        const matchedHypetrainType = HYPETRAIN_TYPES.find(t => specType === 'matches' && specAttribute === 'type' && t.value === specText)?.value;
+        return { ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount, hypetrainType: matchedHypetrainType || DEFAULT_SAMPLE_DATA.hypetrainType };
+    });
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const channel = appContext.alertConfig.meta.channel;
 
@@ -360,6 +367,12 @@ export function AlertView(props: {
                                 <NumberInput size="xs" label="${amount}" value={sample.amount} onChange={(val) => setSample({ ...sample, amount: val as number | '' })} />
                                 <NumberInput size="xs" label="${amount2}" value={sample.amount2} onChange={(val) => setSample({ ...sample, amount2: val as number | '' })} />
                                 <TextInput size="xs" label="${text}" value={sample.text} onChange={(ev) => setSample({ ...sample, text: ev.target.value })} />
+                                {CURRENCY_TYPES.includes(type) && (
+                                    <TextInput size="xs" label="${currency}" value={sample.currency} onChange={(ev) => setSample({ ...sample, currency: ev.target.value })} />
+                                )}
+                                {type === 'hypetrain' && (
+                                    <Select size="xs" label="${type}" data={HYPETRAIN_TYPES} value={sample.hypetrainType} onChange={(value) => setSample({ ...sample, hypetrainType: (value || sample.hypetrainType) as HypetrainType })} />
+                                )}
                             </Stack>
                         </Popover.Dropdown>
                     </Popover>

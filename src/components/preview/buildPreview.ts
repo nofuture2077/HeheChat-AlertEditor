@@ -8,7 +8,20 @@ export type SampleData = {
   amount2: number | '';
   text: string;
   rewardTitle: string;
+  currency: string;
+  hypetrainType: HypetrainType;
 };
+
+export type HypetrainType = 'hypeTrainBegin' | 'hypeTrainLevel' | 'hypeTrainEnd';
+
+export const HYPETRAIN_TYPES: { value: HypetrainType, label: string }[] = [
+  { value: 'hypeTrainBegin', label: 'Start' },
+  { value: 'hypeTrainLevel', label: 'Level up' },
+  { value: 'hypeTrainEnd', label: 'End' },
+];
+
+/** Main types whose events carry a ${currency} */
+export const CURRENCY_TYPES: EventMainType[] = ['donation', 'kofi'];
 
 export const DEFAULT_SAMPLE_DATA: SampleData = {
   username: 'TestUser',
@@ -17,6 +30,8 @@ export const DEFAULT_SAMPLE_DATA: SampleData = {
   amount2: 1,
   text: 'Test message',
   rewardTitle: 'TTS',
+  currency: 'EUR',
+  hypetrainType: 'hypeTrainBegin',
 };
 
 export const EVENT_TYPE_LABELS: Record<EventMainType, string> = {
@@ -54,7 +69,8 @@ export function buildSampleEvent(channel: string, eventType: EventType, sample: 
     rewardTitle: sample.rewardTitle,
     username: sample.username,
     eventType,
-    text: [{ text: sample.text }]
+    text: [{ text: sample.text }],
+    ...sampleEventVars(mainType, sample),
   };
   const event: Event = {
     id: Date.now(),
@@ -68,6 +84,17 @@ export function buildSampleEvent(channel: string, eventType: EventType, sample: 
     text: JSON.stringify(eventData),
   };
   return { event, eventData };
+}
+
+/** Event type specific variables the backend adds to the event data */
+function sampleEventVars(mainType: EventMainType, sample: SampleData): Record<string, unknown> {
+  if (CURRENCY_TYPES.includes(mainType)) {
+    return { currency: sample.currency };
+  }
+  if (mainType === 'hypetrain') {
+    return { type: sample.hypetrainType, level: Number(sample.amount || 0) };
+  }
+  return {};
 }
 
 const SCREEN_POSITION_CLASSES = ['top', 'middle', 'bottom', 'left', 'center', 'right'];
@@ -88,6 +115,7 @@ export function centerPosition(position?: string): string {
  */
 export function toVisualAlert(alert: EventAlert, channel: string, sample: SampleData) {
   const vars = {
+    ...sampleEventVars(EventTypeMapping[alert.type], sample),
     ...sample,
     amount: Number(sample.amount || 0),
     amount2: Number(sample.amount2 || 0),
