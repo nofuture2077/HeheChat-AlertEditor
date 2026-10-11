@@ -156,13 +156,13 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
             <Divider label="OBS overlay" labelPosition="left" mt="sm" />
 
             <Button variant="light" leftSection={<IconBroadcast size={16} />} onClick={handleSendToOverlay}>
-              Send to overlay preview tabs
+              Send to OBS overlay
             </Button>
             <Button variant="subtle" leftSection={<IconExternalLink size={16} />} onClick={() => openOverlayInNewTab(appContext.sink)}>
               Open overlay preview in new tab
             </Button>
             <Alert variant="light" color="gray" icon={<IconInfoCircle size={16} />} p="xs">
-              <Text size="xs">Overlay preview tabs use your saved config — save first to see your latest changes there.</Text>
+              <Text size="xs">The OBS overlay and preview tabs use your saved config — save first to see your latest changes there.</Text>
             </Alert>
           </Stack>
         </ScrollArea.Autosize>
