@@ -4,10 +4,10 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconUserEdit, IconVolume } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconArrowsMinimize, IconUserEdit, IconVolume } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize, parseVolume } from './helper';
-import { OptimizedFile, useFileOptimizer } from './useFileOptimizer';
+import { DEFAULT_MAX_WIDTH, MAX_WIDTHS, OptimizedFile, useFileOptimizer } from './useFileOptimizer';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
@@ -731,6 +731,35 @@ function NormalizeCheckbox(props: { checked: boolean; disabled: boolean; onChang
     );
 }
 
+const MAX_WIDTH_KEY = 'hehe-max-width';
+
+// Remembers the width uploads are scaled down to, undefined keeps the original size
+function useMaxWidthPreference(): [number | undefined, (value: number | undefined) => void] {
+    const [maxWidth, setMaxWidth] = useState(() => {
+        const stored = localStorage.getItem(MAX_WIDTH_KEY);
+        return stored === 'original' ? undefined : Number(stored) || DEFAULT_MAX_WIDTH;
+    });
+    return [maxWidth, (value: number | undefined) => {
+        localStorage.setItem(MAX_WIDTH_KEY, value ? String(value) : 'original');
+        setMaxWidth(value);
+    }];
+}
+
+function MaxWidthSelect(props: { value: number | undefined; disabled: boolean; onChange: (value: number | undefined) => void }) {
+    return (
+        <Select
+            mb="xs"
+            label="Max. width"
+            description="Images and videos are scaled down to this width, video frame rate is capped at 30 fps"
+            data={[{ value: 'original', label: 'Original' }, ...MAX_WIDTHS.map(width => ({ value: String(width), label: `${width} px` }))]}
+            value={props.value ? String(props.value) : 'original'}
+            allowDeselect={false}
+            disabled={props.disabled}
+            onChange={(value) => props.onChange(value && value !== 'original' ? Number(value) : undefined)}
+        />
+    );
+}
+
 function OptimizeStatus(props: { busy: boolean; progress: number; result: OptimizedFile | null; error: string | null }) {
     if (props.busy) {
         return (
@@ -774,6 +803,7 @@ export function UploadFileView(props: {
     const [optimizeError, setOptimizeError] = useState<string | null>(null);
     const { optimize, busy, progress } = useFileOptimizer();
     const [normalize, setNormalize] = useNormalizePreference();
+    const [maxWidth, setMaxWidth] = useMaxWidthPreference();
     const [lastFile, setLastFile] = useState<File | null>(null);
     const appContext = useContext<AppContextProps>(AppContext);
 
@@ -835,14 +865,14 @@ export function UploadFileView(props: {
         return true;
     };
 
-    const onSelect = async function (file: File, normalizeAudio = normalize) {
+    const onSelect = async function (file: File, normalizeAudio = normalize, width = maxWidth) {
         setLastFile(file);
         setData("");
         setOptimized(null);
         setOptimizeError(null);
         let result: OptimizedFile;
         try {
-            result = await optimize(file, { normalize: normalizeAudio });
+            result = await optimize(file, { normalize: normalizeAudio, maxWidth: width });
         } catch (error) {
             setOptimizeError(error instanceof Error ? error.message : String(error));
             return;
@@ -879,6 +909,10 @@ export function UploadFileView(props: {
                 <NormalizeCheckbox checked={normalize} disabled={busy} onChange={(value) => {
                     setNormalize(value);
                     if (lastFile) onSelect(lastFile, value);
+                }} />
+                <MaxWidthSelect value={maxWidth} disabled={busy} onChange={(value) => {
+                    setMaxWidth(value);
+                    if (lastFile) onSelect(lastFile, normalize, value);
                 }} />
                 <DropZone onSelect={(file) => onSelect(file)}></DropZone>
                 <OptimizeStatus busy={busy} progress={progress} result={optimized} error={optimizeError} />
@@ -967,6 +1001,7 @@ export function ReplaceFileView(props: {
     const [optimizeError, setOptimizeError] = useState<string | null>(null);
     const { optimize, busy, progress } = useFileOptimizer();
     const [normalize, setNormalize] = useNormalizePreference();
+    const [maxWidth, setMaxWidth] = useMaxWidthPreference();
     const [lastFile, setLastFile] = useState<File | null>(null);
     const appContext = useContext<AppContextProps>(AppContext);
 
@@ -1009,14 +1044,14 @@ export function ReplaceFileView(props: {
         return true;
     };
 
-    const onSelect = async function (file: File, normalizeAudio = normalize) {
+    const onSelect = async function (file: File, normalizeAudio = normalize, width = maxWidth) {
         setLastFile(file);
         setData("");
         setOptimized(null);
         setOptimizeError(null);
         let result: OptimizedFile;
         try {
-            result = await optimize(file, { normalize: normalizeAudio });
+            result = await optimize(file, { normalize: normalizeAudio, maxWidth: width });
         } catch (error) {
             setOptimizeError(error instanceof Error ? error.message : String(error));
             return;
@@ -1065,6 +1100,10 @@ export function ReplaceFileView(props: {
                 <NormalizeCheckbox checked={normalize} disabled={busy} onChange={(value) => {
                     setNormalize(value);
                     if (lastFile) onSelect(lastFile, value);
+                }} />
+                <MaxWidthSelect value={maxWidth} disabled={busy} onChange={(value) => {
+                    setMaxWidth(value);
+                    if (lastFile) onSelect(lastFile, normalize, value);
                 }} />
                 <DropZone onSelect={(file) => onSelect(file)}></DropZone>
                 <OptimizeStatus busy={busy} progress={progress} result={optimized} error={optimizeError} />
@@ -1130,6 +1169,99 @@ export function ReplaceFileView(props: {
         </Modal>);
 }
 
+
+// Scales already uploaded images and MP4 videos down one after another, each smaller file is saved right away
+export function ShrinkFilesView(props: {
+    files: Base64File[];
+    takenNames: string[];
+    close: () => void;
+    save: (file: Base64File) => void;
+}) {
+    const { shrinkExisting, progress } = useFileOptimizer();
+    const [maxWidth, setMaxWidth] = useMaxWidthPreference();
+    const [status, setStatus] = useState<Record<string, 'pending' | 'running' | 'done' | 'unchanged' | 'failed'>>(
+        () => Object.fromEntries(props.files.map(file => [file.id, 'pending' as const]))
+    );
+    const [saved, setSaved] = useState<Record<string, number>>({});
+    const [running, setRunning] = useState(false);
+    const cancelled = useRef(false);
+
+    const start = async () => {
+        setRunning(true);
+        cancelled.current = false;
+        const names = new Set(props.takenNames);
+        for (const file of props.files) {
+            if (cancelled.current) break;
+            setStatus(prev => ({ ...prev, [file.id]: 'running' }));
+            try {
+                const result = await shrinkExisting(file, maxWidth);
+                if (!result) {
+                    setStatus(prev => ({ ...prev, [file.id]: 'unchanged' }));
+                    continue;
+                }
+                // A new extension (e.g. PNG to WebP) may collide with another file name
+                if (result.name !== file.name) {
+                    const dot = result.name.lastIndexOf('.');
+                    const base = result.name.substring(0, dot);
+                    const ext = result.name.substring(dot);
+                    for (let counter = 1; names.has(result.name); counter++) result.name = `${base}_${counter}${ext}`;
+                    names.delete(file.name);
+                    names.add(result.name);
+                }
+                props.save(result);
+                setSaved(prev => ({ ...prev, [file.id]: Math.round((file.data.length - result.data.length) * 0.75) }));
+                setStatus(prev => ({ ...prev, [file.id]: 'done' }));
+            } catch (error) {
+                console.error('Shrinking file failed', file.name, error);
+                setStatus(prev => ({ ...prev, [file.id]: 'failed' }));
+            }
+        }
+        setRunning(false);
+    };
+
+    const finished = !running && Object.values(status).every(x => x !== 'pending' && x !== 'running');
+    const totalSaved = Object.values(saved).reduce((sum, bytes) => sum + bytes, 0);
+    const statusBadge = (id: string) => ({
+        pending: <Badge color="gray" variant="light">Pending</Badge>,
+        running: <Badge color="blue" variant="light">Optimizing</Badge>,
+        done: <Badge color="green" variant="light">-{formatFileSize(saved[id] || 0)}</Badge>,
+        unchanged: <Badge color="gray" variant="light">Already small</Badge>,
+        failed: <Badge color="red" variant="light">Failed</Badge>
+    })[status[id]];
+
+    return (
+        <Modal key="shrink-files-view" opened={true} onClose={() => { cancelled.current = true; props.close(); }} withCloseButton={false}>
+            <Fieldset legend="Optimize File Size">
+                <Text size="sm" mb="xs" c="dimmed">
+                    Scales images and MP4 videos down to the chosen width. Files are only replaced when they get smaller, every alert using them keeps working. WebM videos and animated WebPs are left unchanged.
+                </Text>
+                <MaxWidthSelect value={maxWidth} disabled={running || finished} onChange={setMaxWidth} />
+                <Stack gap="xs">
+                    {props.files.map(file => (
+                        <Stack gap={4} key={file.id}>
+                            <Group justify="space-between" wrap="nowrap">
+                                <Text size="sm" truncate>{file.name}</Text>
+                                {statusBadge(file.id)}
+                            </Group>
+                            {status[file.id] === 'running' && <Progress value={progress * 100} size="sm" animated />}
+                        </Stack>
+                    ))}
+                </Stack>
+                {finished && (
+                    <Text size="sm" mt="sm">Saved {formatFileSize(totalSaved)} in total.</Text>
+                )}
+                <Group justify="space-around" mt="md">
+                    <Button onClick={() => { cancelled.current = true; props.close(); }}>{finished ? 'Close' : 'Cancel'}</Button>
+                    {!finished && (
+                        <Button variant="filled" color="pink" onClick={start} loading={running} disabled={running}>
+                            Optimize
+                        </Button>
+                    )}
+                </Group>
+            </Fieldset>
+        </Modal>
+    );
+}
 
 // Normalizes the audio of already uploaded files one after another, each finished file is saved right away
 export function NormalizeFilesView(props: {
@@ -1319,8 +1451,8 @@ export function AlertConfigurator(props: NavigationProps) {
         setConfirmDeleteComponent(undefined);
     }
 
-    // Unlike replaceFile this keeps the modal open, NormalizeFilesView saves several files in a row
-    const saveNormalizedFile = function (data: Base64File) {
+    // Unlike replaceFile this keeps the modal open, NormalizeFilesView and ShrinkFilesView save several files in a row
+    const saveFileInPlace = function (data: Base64File) {
         const config = appContext.alertConfig;
         config.data!.files[data.id] = data;
         appContext.setAlertConfig(config);
@@ -1328,6 +1460,8 @@ export function AlertConfigurator(props: NavigationProps) {
 
     const canNormalize = (file: Base64File) => file.type === 'audio' || file.type === 'video';
     const unnormalizedFiles = Object.values(appContext.alertConfig.data?.files || {}).filter(file => canNormalize(file) && !file.normalized);
+    // WebM is never re-encoded, it might carry transparency
+    const shrinkableFiles = Object.values(appContext.alertConfig.data?.files || {}).filter(file => file.type === 'image' || file.mime === 'video/mp4');
 
     const deleteAlert = function (alertId: string) {
         const config = appContext.alertConfig;
@@ -1354,8 +1488,14 @@ export function AlertConfigurator(props: NavigationProps) {
         confirmDeleteHandler.open();
     }
 
+    function shrinkFilesView(files: Base64File[]) {
+        const takenNames = Object.values(appContext.alertConfig.data?.files || {}).map(file => file.name);
+        setConfirmDeleteComponent(<ShrinkFilesView files={files} takenNames={takenNames} close={confirmDeleteHandler.close} save={saveFileInPlace} />);
+        confirmDeleteHandler.open();
+    }
+
     function normalizeFilesView(files: Base64File[]) {
-        setConfirmDeleteComponent(<NormalizeFilesView files={files} close={confirmDeleteHandler.close} save={saveNormalizedFile} />);
+        setConfirmDeleteComponent(<NormalizeFilesView files={files} close={confirmDeleteHandler.close} save={saveFileInPlace} />);
         confirmDeleteHandler.open();
     }
 
@@ -1651,6 +1791,14 @@ export function AlertConfigurator(props: NavigationProps) {
                         label={`Normalize audio level (${unnormalizedFiles.length})`}
                         description="Even out the loudness of all sounds and videos"
                         onClick={() => normalizeFilesView(unnormalizedFiles)}
+                    />
+                )}
+                {shrinkableFiles.length > 0 && (
+                    <NavLink
+                        leftSection={<IconArrowsMinimize />}
+                        label={`Optimize file size (${shrinkableFiles.length})`}
+                        description="Scale images and MP4 videos down to a maximum width"
+                        onClick={() => shrinkFilesView(shrinkableFiles)}
                     />
                 )}
                 {fileNodes}

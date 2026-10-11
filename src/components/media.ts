@@ -28,6 +28,12 @@ const FORMATS: Record<string, SourceFormat> = {
 // EBU R128 loudness normalization, loudnorm upsamples to 192kHz so resample back
 const LOUDNORM = ['-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', '48000'];
 
+export type ConvertOptions = { normalize?: boolean; maxWidth?: number };
+
+// Caps the width keeping the aspect ratio, never upscales. Encoders need even dimensions
+const scaleFilter = (maxWidth?: number) =>
+    maxWidth ? `scale='trunc(min(iw,${maxWidth})/2)*2':-2` : 'scale=trunc(iw/2)*2:trunc(ih/2)*2';
+
 const ascii = (bytes: Uint8Array, start: number, length: number) =>
     String.fromCharCode(...bytes.subarray(start, start + length));
 
@@ -72,6 +78,9 @@ export function isAnimatedGif(bytes: Uint8Array): boolean {
     }
     return false;
 }
+
+// Extended WebP files carry an animation flag in the VP8X header
+export const isAnimatedWebP = (bytes: Uint8Array) => ascii(bytes, 12, 4) === 'VP8X' && (bytes[20] & 0x02) !== 0;
 
 export async function download(url: string, onProgress: (progress: number) => void, signal?: AbortSignal): Promise<Uint8Array> {
     const response = await fetch(url, { signal });
@@ -133,7 +142,7 @@ export class MediaConverter {
     }
 
     async convert(bytes: Uint8Array, url: string, onProgress: (progress: number) => void,
-        options: { normalize?: boolean } = {}): Promise<MediaResult & { normalized: boolean }> {
+        options: ConvertOptions = {}): Promise<MediaResult & { normalized: boolean }> {
         const source = detectFormat(bytes, url);
         if (!source) {
             throw new Error('Unknown file format');
@@ -141,13 +150,13 @@ export class MediaConverter {
 
         if (options.normalize && source.type !== 'image') {
             try {
-                return { ...await this.convertFormat(bytes, source, onProgress, true), normalized: true };
+                return { ...await this.convertFormat(bytes, source, onProgress, { ...options, normalize: true }), normalized: true };
             } catch (error) {
                 // e.g. a video without an audio stream, convert it without normalization
                 console.warn('Normalizing failed, converting without it', error);
             }
         }
-        return { ...await this.convertFormat(bytes, source, onProgress, false), normalized: false };
+        return { ...await this.convertFormat(bytes, source, onProgress, { ...options, normalize: false }), normalized: false };
     }
 
     // Normalizes the audio of an already converted file and keeps its format
@@ -156,11 +165,11 @@ export class MediaConverter {
         if (!source || source.type === 'image') {
             throw new Error('Only audio and video files can be normalized');
         }
-        return this.convertFormat(bytes, source, onProgress, true);
+        return this.convertFormat(bytes, source, onProgress, { normalize: true });
     }
 
-    private convertFormat(bytes: Uint8Array, source: SourceFormat, onProgress: (progress: number) => void,
-        normalize: boolean): Promise<MediaResult> {
+    private async convertFormat(bytes: Uint8Array, source: SourceFormat, onProgress: (progress: number) => void,
+        { normalize, maxWidth }: ConvertOptions): Promise<MediaResult> {
         const loudnorm = normalize ? LOUDNORM : [];
         switch (source.ext) {
             case 'mp3':
@@ -170,11 +179,16 @@ export class MediaConverter {
                 if (!normalize) return Promise.resolve({ data: bytes, ...source });
                 return this.run(bytes, source, onProgress, FORMATS.webm, ['-c:v', 'copy', ...loudnorm, '-c:a', 'libvorbis']);
             case 'webp':
-                return Promise.resolve({ data: bytes, ...source });
+                // Animated WebPs would lose all but the first frame on the canvas
+                if (maxWidth && !isAnimatedWebP(bytes) && await this.imageWidth(bytes, source) > maxWidth) {
+                    return this.toWebP(bytes, source, onProgress, maxWidth);
+                }
+                return { data: bytes, ...source };
             case 'mp4':
                 // libopus and libvpx-vp9 crash in the ffmpeg.wasm core, VP8 + Vorbis work
                 return this.run(bytes, source, onProgress, FORMATS.webm,
-                    ['-c:v', 'libvpx', '-crf', '10', '-b:v', '2M', '-deadline', 'good', '-cpu-used', '4', ...loudnorm, '-c:a', 'libvorbis']);
+                    [...(maxWidth ? ['-vf', scaleFilter(maxWidth)] : []), '-fpsmax', '30',
+                        '-c:v', 'libvpx', '-crf', '10', '-b:v', '2M', '-deadline', 'good', '-cpu-used', '4', ...loudnorm, '-c:a', 'libvorbis']);
             case 'ogg':
             case 'wav':
                 return this.run(bytes, source, onProgress, FORMATS.mp3,
@@ -182,22 +196,25 @@ export class MediaConverter {
             case 'gif':
                 if (isAnimatedGif(bytes)) {
                     return this.run(bytes, source, onProgress, FORMATS.webp,
-                        ['-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libwebp_anim', '-lossless', '0',
+                        ['-vf', scaleFilter(maxWidth), '-c:v', 'libwebp_anim', '-lossless', '0',
                             '-compression_level', '6', '-q:v', '80', '-loop', '0', '-an', '-fps_mode', 'passthrough']);
                 }
-                return this.toWebP(bytes, source, onProgress);
+                return this.toWebP(bytes, source, onProgress, maxWidth);
             default:
-                return this.toWebP(bytes, source, onProgress);
+                return this.toWebP(bytes, source, onProgress, maxWidth);
         }
     }
 
     // Static images go through the canvas encoder, ffmpeg is the fallback for
     // browsers that can't encode WebP (Safari)
-    private async toWebP(bytes: Uint8Array, source: SourceFormat, onProgress: (progress: number) => void): Promise<MediaResult> {
+    private async toWebP(bytes: Uint8Array, source: SourceFormat, onProgress: (progress: number) => void,
+        maxWidth?: number): Promise<MediaResult> {
         try {
             const bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: source.mime }));
-            const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-            canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
+            const width = maxWidth ? Math.min(bitmap.width, maxWidth) : bitmap.width;
+            const height = Math.max(1, Math.round(bitmap.height * width / bitmap.width));
+            const canvas = new OffscreenCanvas(width, height);
+            canvas.getContext('2d')!.drawImage(bitmap, 0, 0, width, height);
             bitmap.close();
             const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.8 });
             if (blob.type === 'image/webp') {
@@ -207,7 +224,20 @@ export class MediaConverter {
         } catch (error) {
             console.warn('Canvas WebP encoding failed, falling back to ffmpeg', error);
         }
-        return this.run(bytes, source, onProgress, FORMATS.webp, ['-c:v', 'libwebp', '-lossless', '0', '-q:v', '80']);
+        return this.run(bytes, source, onProgress, FORMATS.webp,
+            [...(maxWidth ? ['-vf', scaleFilter(maxWidth)] : []), '-c:v', 'libwebp', '-lossless', '0', '-q:v', '80']);
+    }
+
+    // Unknown width (e.g. the browser can't decode it) counts as fitting, the file is kept
+    private async imageWidth(bytes: Uint8Array, source: SourceFormat): Promise<number> {
+        try {
+            const bitmap = await createImageBitmap(new Blob([bytes as BlobPart], { type: source.mime }));
+            const width = bitmap.width;
+            bitmap.close();
+            return width;
+        } catch {
+            return 0;
+        }
     }
 
     private async run(bytes: Uint8Array, source: SourceFormat, onProgress: (progress: number) => void,

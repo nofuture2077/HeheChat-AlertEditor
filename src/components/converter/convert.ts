@@ -2,6 +2,7 @@ import { Base64File, EventAlert, EventAlertConfig, EventMainType } from '../type
 import { bytesToBase64, generateGUID, hashObjectSHA256 } from '../helper';
 import { ConversionPlan, DEFAULT_VOICE, MediaJob } from './mapping';
 import { download, MediaConverter, MediaResult } from '../media';
+import { DEFAULT_MAX_WIDTH } from '../useFileOptimizer';
 
 export type FileStatus = 'queued' | 'downloading' | 'converting' | 'done' | 'error';
 
@@ -107,7 +108,7 @@ export async function runConversion(
         const bytes = await download(job.url, p => update(index, { progress: p }), signal);
         update(index, { status: 'converting', progress: 0, originalSize: bytes.length });
         try {
-            return await converter.convert(bytes, job.url, p => update(index, { progress: p }), { normalize: true });
+            return await converter.convert(bytes, job.url, p => update(index, { progress: p }), { normalize: true, maxWidth: DEFAULT_MAX_WIDTH });
         } catch (error) {
             if (signal?.aborted) throw error;
             warnings.push(`${job.baseName}: conversion failed, kept original file (${(error as Error).message})`);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base64ToBytes, bytesToBase64 } from './helper';
 import type { Base64File } from './types';
-import type { MediaConverter } from './media';
+import type { ConvertOptions, MediaConverter } from './media';
 
 export type FileType = 'audio' | 'image' | 'video' | 'application/zip';
 
@@ -21,6 +21,10 @@ export type OptimizedFile = {
 // Formats the alert player can use as they are, everything else has to be converted
 const PLAYABLE = ['audio/mpeg', 'image/webp', 'video/webm'];
 
+// Widths images and videos can be scaled down to on upload
+export const MAX_WIDTHS = [1920, 1280, 800, 400, 200];
+export const DEFAULT_MAX_WIDTH = 1920;
+
 // The media module pulls in ffmpeg, load it and the converter only when the first file is dropped
 let converter: Promise<MediaConverter> | undefined;
 const getConverter = () => converter ||= import('./media').then(({ MediaConverter }) => new MediaConverter());
@@ -37,7 +41,7 @@ export function useFileOptimizer() {
     const [busy, setBusy] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const optimize = async (file: File, options: { normalize?: boolean } = {}): Promise<OptimizedFile> => {
+    const optimize = async (file: File, options: ConvertOptions = {}): Promise<OptimizedFile> => {
         const bytes = new Uint8Array(await file.arrayBuffer());
         const original: OptimizedFile = {
             name: file.name,
@@ -100,5 +104,21 @@ export function useFileOptimizer() {
         }
     };
 
-    return { optimize, normalizeExisting, busy, progress };
+    // Scales an uploaded file down in place, resolves undefined when the result wouldn't be smaller
+    const shrinkExisting = async (file: Base64File, maxWidth?: number): Promise<Base64File | undefined> => {
+        setBusy(true);
+        setProgress(0);
+        try {
+            const bytes = base64ToBytes(file.data);
+            const result = await (await getConverter()).convert(bytes, file.name, setProgress, { maxWidth });
+            if (result.data === bytes || result.data.length >= bytes.length) {
+                return undefined;
+            }
+            return { ...file, name: withExtension(file.name, result.ext), mime: result.mime, type: result.type, data: bytesToBase64(result.data) };
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return { optimize, normalizeExisting, shrinkExisting, busy, progress };
 }
