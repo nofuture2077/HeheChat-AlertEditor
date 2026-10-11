@@ -106,6 +106,71 @@ export function parseVolume(value: string | number | undefined): number {
     return value !== undefined && value !== '' && Number.isFinite(volume) ? volume : 1.0;
 }
 
+// Sample sentence for voice previews, keyed by full language code or by its base language
+const VOICE_PREVIEW_TEXTS: Record<string, string> = {
+    'af': '${username} skenk 5 subs aan die gemeenskap',
+    'am': '${username} ለማህበረሰቡ 5 ሰብስክሪፕሽኖችን በስጦታ ይሰጣል',
+    'ar': '${username} يهدي 5 اشتراكات للمجتمع',
+    'bg': '${username} подарява 5 абонамента на общността',
+    'bn': '${username} কমিউনিটিকে ৫টি সাবস্ক্রিপশন উপহার দিচ্ছে',
+    'ca': '${username} regala 5 subscripcions a la comunitat',
+    'cmn': '${username} 向社区赠送了 5 个订阅',
+    'cmn-TW': '${username} 向社群贈送了 5 個訂閱',
+    'cs': '${username} daruje komunitě 5 předplatných',
+    'da': '${username} giver 5 subs væk til fællesskabet',
+    'de': '${username} verschenkt 5 Subs an die Community',
+    'el': 'Ο ${username} χαρίζει 5 συνδρομές στην κοινότητα',
+    'en': '${username} is gifting 5 subs to the community',
+    'es': '${username} regala 5 suscripciones a la comunidad',
+    'et': '${username} kingib kogukonnale 5 tellimust',
+    'eu': '${username}-k 5 harpidetza oparitzen dizkio komunitateari',
+    'fi': '${username} lahjoittaa yhteisölle 5 tilausta',
+    'fil': 'Nagreregalo si ${username} ng 5 subs sa komunidad',
+    'fr': '${username} offre 5 abonnements à la communauté',
+    'gl': '${username} regala 5 subscricións á comunidade',
+    'gu': '${username} સમુદાયને 5 સબ્સ ભેટ આપે છે',
+    'he': '${username} מעניק 5 מנויים לקהילה',
+    'hi': '${username} कम्युनिटी को 5 सब्स गिफ्ट कर रहा है',
+    'hu': '${username} 5 feliratkozást ajándékoz a közösségnek',
+    'id': '${username} menghadiahkan 5 sub kepada komunitas',
+    'is': '${username} gefur samfélaginu 5 áskriftir',
+    'it': '${username} regala 5 abbonamenti alla community',
+    'ja': '${username}さんがコミュニティに5つのサブスクをギフトしました',
+    'kn': '${username} ಸಮುದಾಯಕ್ಕೆ 5 ಸಬ್‌ಗಳನ್ನು ಉಡುಗೊರೆಯಾಗಿ ನೀಡುತ್ತಿದ್ದಾರೆ',
+    'ko': '${username}님이 커뮤니티에 구독 5개를 선물합니다',
+    'lt': '${username} dovanoja bendruomenei 5 prenumeratas',
+    'lv': '${username} dāvina kopienai 5 abonementus',
+    'ml': '${username} കമ്മ്യൂണിറ്റിക്ക് 5 സബ്സ് സമ്മാനിക്കുന്നു',
+    'mr': '${username} समुदायाला 5 सब्स भेट देत आहे',
+    'ms': '${username} menghadiahkan 5 langganan kepada komuniti',
+    'nb': '${username} gir bort 5 subs til fellesskapet',
+    'nl': '${username} geeft 5 subs cadeau aan de community',
+    'pa': '${username} ਕਮਿਊਨਿਟੀ ਨੂੰ 5 ਸਬਸ ਤੋਹਫ਼ੇ ਵਜੋਂ ਦੇ ਰਿਹਾ ਹੈ',
+    'pl': '${username} rozdaje społeczności 5 subskrypcji',
+    'pt': '${username} oferece 5 subscrições à comunidade',
+    'pt-BR': '${username} está presenteando 5 inscrições para a comunidade',
+    'ro': '${username} oferă 5 abonamente comunității',
+    'ru': '${username} дарит сообществу 5 подписок',
+    'sk': '${username} daruje komunite 5 predplatných',
+    'sr': '${username} поклања заједници 5 претплата',
+    'sv': '${username} ger bort 5 subs till communityn',
+    'sw': '${username} anatoa usajili 5 kama zawadi kwa jamii',
+    'ta': '${username} சமூகத்திற்கு 5 சப்ஸ்களை பரிசளிக்கிறார்',
+    'te': '${username} కమ్యూనిటీకి 5 సబ్స్ బహుమతిగా ఇస్తున్నారు',
+    'th': '${username} มอบซับ 5 รายการให้กับชุมชน',
+    'tr': '${username} topluluğa 5 abonelik hediye ediyor',
+    'uk': '${username} дарує спільноті 5 підписок',
+    'ur': '${username} کمیونٹی کو 5 سبسکرپشنز تحفے میں دے رہا ہے',
+    'vi': '${username} tặng 5 lượt đăng ký cho cộng đồng',
+    'yue': '${username} 送咗 5 個訂閱俾社群'
+};
+
+export function getVoicePreviewText(languageCode: string): string {
+    return VOICE_PREVIEW_TEXTS[languageCode]
+        || VOICE_PREVIEW_TEXTS[languageCode.split('-')[0]]
+        || VOICE_PREVIEW_TEXTS['en'];
+}
+
 export async function previewTTS(
     text: string, 
     voiceType: 'ai' | 'google' | 'none' | 'default', 

@@ -13,7 +13,7 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconMusic } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
-import { parseVolume, previewTTS } from './helper';
+import { getVoicePreviewText, parseVolume, previewTTS } from './helper';
 
 interface DefaultVoiceEditorProps {
     opened: boolean;
@@ -123,8 +123,9 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
     const handlePreviewTTS = () => {
         // When previewing the default voice in the editor, we pass the current editor state directly
         // We don't use "default" voice type here since we want to preview the actual voice being configured
+        // AI voices have no language selection, so they preview in German
         previewTTS(
-            'This is a preview of the default voice.',
+            getVoicePreviewText(voiceType === 'google' ? selectedLanguage : 'de-DE'),
             voiceType,
             voice,
             appContext.alertConfig.meta.channel,
