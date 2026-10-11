@@ -73,7 +73,10 @@ function App() {
         });
 
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/voices?token=' + token).then(res => res.json()).then((data: {voices: GoogleTTSVoice[]}) => {
-            setAppContext((context) => ({...context, googleVoices: data.voices}));
+            // The backend derives the language from the voice name, so voices without a language prefix
+            // (e.g. the Gemini voice "Achernar") can't be synthesized
+            const voices = data.voices.filter((v) => v.name.toLowerCase().startsWith(v.languageCodes[0].toLowerCase() + '-'));
+            setAppContext((context) => ({...context, googleVoices: voices}));
         });
     }, []);
 
