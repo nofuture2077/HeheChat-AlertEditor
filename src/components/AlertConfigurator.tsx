@@ -697,7 +697,7 @@ export function AlertView(props: {
                     />
                 )}
             </Stack>
-            <Box w={{ base: '100%', lg: 460 }} style={{ position: 'sticky', top: 0, flexShrink: 0, zIndex: 1 }}>
+            <Box w={{ base: '100%', lg: 460 }} pos={{ base: 'static', lg: 'sticky' }} top={0} style={{ flexShrink: 0, zIndex: 1 }}>
                 {previewColumn}
             </Box>
             </Flex>
