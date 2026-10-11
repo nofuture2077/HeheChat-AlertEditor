@@ -42,6 +42,17 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
   if (!file) return null;
 
   const fileUrl = `data:${file.mime};base64,${file.data}`;
+
+  const handleDownload = () => {
+    const ext = file.mime.split('/')[1]?.split(/[+;]/)[0];
+    const hasExtension = /\.[a-z0-9]+$/i.test(file.name);
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.download = hasExtension || !ext ? file.name : `${file.name}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
   
   // Determine preview type based on MIME type
   const isAudio = file.mime.startsWith('audio/');
@@ -70,13 +81,13 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
           </Center>
         )}
         {isAudio && (
-          <audio controls style={{ width: '100%' }}>
+          <audio controls controlsList="nodownload" style={{ width: '100%' }}>
             <source src={fileUrl} type={file.mime} />
             Your browser does not support the audio element.
           </audio>
       )}
       {isVideo && (
-          <video controls style={{ width: '100%', maxHeight: 300 }}>
+          <video controls controlsList="nodownload" style={{ width: '100%', maxHeight: 300 }}>
             <source src={fileUrl} type={file.mime} />
             Your browser does not support the video element.
           </video>
@@ -98,6 +109,7 @@ export function FilePreviewModal({ opened, onClose, onRename, file }: FilePrevie
           </Group>
         ) : (
           <Group mt="md" justify="flex-end">
+            <Button onClick={handleDownload} variant="light">Download</Button>
             <Button onClick={() => setIsRenaming(true)} variant="light">Rename</Button>
           </Group>
         )}
