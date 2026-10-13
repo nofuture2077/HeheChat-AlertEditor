@@ -4,11 +4,12 @@ import { useHotkeys } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { AlertConfigurator } from './AlertConfigurator';
 import { AppContext } from '../ApplicationContext';
-import { IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport } from '@tabler/icons-react'
+import { IconArrowRight, IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
 import { formatFileSize } from './helper';
 import { ImportConfigModal, ImportMode, mergeAlertConfigs } from './ImportConfigModal';
+import { StreamElementsIcon } from './StreamElementsIcon';
 import { EventAlertConfig } from './types';
 
 // The converter pulls in ffmpeg and is rarely used, load it only when it is opened
@@ -215,6 +216,16 @@ const AlertEditor = () => {
 
       <AppShell.Main>
         <AlertConfigurator/>
+        <Group justify="center" mt="xl" mb="md">
+          <Button
+            variant="light"
+            leftSection={<StreamElementsIcon size={20} />}
+            rightSection={<IconArrowRight size={16} />}
+            onClick={() => setSeImportOpened(true)}
+          >
+            Coming from StreamElements? Import your alerts
+          </Button>
+        </Group>
         <PreviewModal
           opened={previewOpened}
           onClose={() => setPreviewOpened(false)}
@@ -224,7 +235,6 @@ const AlertEditor = () => {
           opened={importOpened}
           onClose={() => setImportOpened(false)}
           onImport={applyImport}
-          onStreamElements={() => setSeImportOpened(true)}
         />
 
         {seImportOpened && (
