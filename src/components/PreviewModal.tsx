@@ -47,12 +47,36 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
     return event;
   };
 
-  const handlePlay = () => {
+  const buildPlayableEvent = () => {
     const event = buildEvent();
     if (!event.eventAlert) {
       notifications.show({ color: 'yellow', title: 'No matching alert', message: `No ${EVENT_TYPE_LABELS[mainType]} alert matches this event.` });
+      return undefined;
+    }
+    return event;
+  };
+
+  const handlePlay = () => {
+    const event = buildPlayableEvent();
+    if (event) {
+      frameRef.current?.playEvent(event);
+    }
+  };
+
+  // Plays the alert as configured, only the TTS voice is replaced (alerts without TTS text use the given text)
+  const handlePlayWithVoice = (voice: string, text: string) => {
+    const event = buildPlayableEvent();
+    if (!event?.eventAlert) {
       return;
     }
+    const tts = event.eventAlert.audio?.tts;
+    event.eventAlert = {
+      ...event.eventAlert,
+      audio: {
+        ...event.eventAlert.audio,
+        tts: { text: tts?.text || text, voiceType: 'google', voiceSpecifier: voice, voiceParams: tts?.voiceParams || {} }
+      }
+    };
     frameRef.current?.playEvent(event);
   };
 
@@ -172,7 +196,7 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
               The preview uses your unsaved changes. Click inside the preview once if sound doesn't play.
             </Text>
 
-            <ProVoicePromo />
+            <ProVoicePromo onPlayAlert={handlePlayWithVoice} />
 
             <Divider label="OBS overlay" labelPosition="left" mt="sm" />
 

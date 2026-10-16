@@ -1,11 +1,16 @@
 import { useContext, useState } from 'react';
 import { Button, Group, Paper, Select, Stack, Text, TextInput } from '@mantine/core';
-import { IconCrown, IconPlayerPlay } from '@tabler/icons-react';
+import { IconBroadcast, IconCrown, IconPlayerPlay } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
 import { getVoicePreviewText, isProVoice, LANGUAGE_NAMES, PREMIUM_URL, previewTTS } from './helper';
 
+interface ProVoicePromoProps {
+    /** Plays the previewed alert with the given voice, the text is used when the alert has no TTS text */
+    onPlayAlert?: (voice: string, text: string) => void;
+}
+
 // Lets non-premium users try the HeheChat Pro voices, previews are free on the backend
-export function ProVoicePromo() {
+export function ProVoicePromo({ onPlayAlert }: ProVoicePromoProps) {
     const appContext = useContext(AppContext);
     const proVoices = appContext.googleVoices.filter(v => isProVoice(v.name));
     const voicesFor = (lang: string) => proVoices.filter(v => v.languageCodes.includes(lang));
@@ -15,7 +20,7 @@ export function ProVoicePromo() {
     // Text typed by the user, null while the localized sample text is used
     const [customText, setCustomText] = useState<string | null>(null);
 
-    if (appContext.isPremium || !proVoices.length) {
+    if (!proVoices.length) {
         return null;
     }
 
@@ -68,6 +73,17 @@ export function ProVoicePromo() {
                         Get Pro
                     </Button>
                 </Group>
+                {onPlayAlert && (
+                    <Button
+                        variant="light"
+                        color="grape"
+                        leftSection={<IconBroadcast size={16} />}
+                        disabled={!selectedVoice}
+                        onClick={() => onPlayAlert(selectedVoice, text)}
+                    >
+                        Play alert with this voice
+                    </Button>
+                )}
             </Stack>
         </Paper>
     );
