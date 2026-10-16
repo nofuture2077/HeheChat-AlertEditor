@@ -5,6 +5,7 @@ import { notifications } from '@mantine/notifications';
 import { EventMainType, EventType, getAlert, EventAlert } from './types';
 import { AppContext, AppContextProps } from '../ApplicationContext';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
+import { ProVoicePromo } from './ProVoicePromo';
 import { buildSampleEvent, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, HYPETRAIN_TYPES, HypetrainType, SampleData } from './preview/buildPreview';
 
 interface PreviewModalProps {
@@ -170,6 +171,8 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
             <Text size="xs" c="dimmed">
               The preview uses your unsaved changes. Click inside the preview once if sound doesn't play.
             </Text>
+
+            <ProVoicePromo />
 
             <Divider label="OBS overlay" labelPosition="left" mt="sm" />
 

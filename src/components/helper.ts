@@ -128,6 +128,78 @@ export function parseVolume(value: string | number | undefined): number {
 }
 
 // Sample sentence for voice previews, keyed by full language code or by its base language
+export const PREMIUM_URL = 'https://hehechat.io/premium';
+
+// Google voices other than Standard require HeheChat Pro (previews are free)
+export function isProVoice(name: string): boolean {
+    return !name.includes('Standard');
+}
+
+// User-friendly names for Google TTS language codes
+export const LANGUAGE_NAMES: Record<string, string> = {
+    'af-ZA': 'Afrikaans',
+    'am-ET': 'Amharic',
+    'ar-XA': 'Arabic',
+    'bg-BG': 'Bulgarian',
+    'bn-IN': 'Bengali',
+    'ca-ES': 'Catalan',
+    'cmn-CN': 'Chinese (Mandarin)',
+    'cmn-TW': 'Chinese (Taiwanese)',
+    'cs-CZ': 'Czech',
+    'da-DK': 'Danish',
+    'de-DE': 'German',
+    'el-GR': 'Greek',
+    'en-AU': 'English (Australia)',
+    'en-GB': 'English (UK)',
+    'en-IN': 'English (India)',
+    'en-US': 'English (US)',
+    'es-ES': 'Spanish (Spain)',
+    'es-US': 'Spanish (US)',
+    'et-EE': 'Estonian',
+    'eu-ES': 'Basque',
+    'fi-FI': 'Finnish',
+    'fil-PH': 'Filipino',
+    'fr-CA': 'French (Canada)',
+    'fr-FR': 'French',
+    'gl-ES': 'Galician',
+    'gu-IN': 'Gujarati',
+    'he-IL': 'Hebrew',
+    'hi-IN': 'Hindi',
+    'hu-HU': 'Hungarian',
+    'id-ID': 'Indonesian',
+    'is-IS': 'Icelandic',
+    'it-IT': 'Italian',
+    'ja-JP': 'Japanese',
+    'kn-IN': 'Kannada',
+    'ko-KR': 'Korean',
+    'lt-LT': 'Lithuanian',
+    'lv-LV': 'Latvian',
+    'ml-IN': 'Malayalam',
+    'mr-IN': 'Marathi',
+    'ms-MY': 'Malay',
+    'nb-NO': 'Norwegian',
+    'nl-BE': 'Dutch (Belgium)',
+    'nl-NL': 'Dutch',
+    'pa-IN': 'Punjabi',
+    'pl-PL': 'Polish',
+    'pt-BR': 'Portuguese (Brazil)',
+    'pt-PT': 'Portuguese',
+    'ro-RO': 'Romanian',
+    'ru-RU': 'Russian',
+    'sk-SK': 'Slovak',
+    'sr-RS': 'Serbian',
+    'sv-SE': 'Swedish',
+    'sw-KE': 'Swahili',
+    'ta-IN': 'Tamil',
+    'te-IN': 'Telugu',
+    'th-TH': 'Thai',
+    'tr-TR': 'Turkish',
+    'uk-UA': 'Ukrainian',
+    'ur-IN': 'Urdu',
+    'vi-VN': 'Vietnamese',
+    'yue-HK': 'Cantonese'
+};
+
 const VOICE_PREVIEW_TEXTS: Record<string, string> = {
     'af': '${username} skenk 5 subs aan die gemeenskap',
     'am': '${username} ለማህበረሰቡ 5 ሰብስክሪፕሽኖችን በስጦታ ይሰጣል',
