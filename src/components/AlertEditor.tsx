@@ -7,7 +7,6 @@ import { AppContext } from '../ApplicationContext';
 import { IconArrowRight, IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
-import { PremiumBanner } from './PremiumBanner';
 import { formatFileSize } from './helper';
 import { ImportConfigModal, ImportMode, mergeAlertConfigs } from './ImportConfigModal';
 import { StreamElementsIcon } from './StreamElementsIcon';
@@ -228,9 +227,6 @@ const AlertEditor = () => {
             Coming from StreamElements? Import your alerts
           </Button>
         </Group>
-
-        <PremiumBanner />
-        
         <PreviewModal
           opened={previewOpened}
           onClose={() => setPreviewOpened(false)}
