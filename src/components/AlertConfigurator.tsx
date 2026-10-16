@@ -13,7 +13,7 @@ import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 import { PreviewModal } from './PreviewModal';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
-import { buildSampleEvent, centerPosition, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, HYPETRAIN_TYPES, HypetrainType, SampleData, toVisualAlert } from './preview/buildPreview';
+import { buildSampleEvent, centerPosition, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, getSampleLanguage, getSampleText, HYPETRAIN_TYPES, HypetrainType, SampleData, toVisualAlert, withSampleText } from './preview/buildPreview';
 
 export interface NavigationProps {
 }
@@ -296,10 +296,16 @@ export function AlertView(props: {
     // 'style' shows the alert centered and zoomed without its screen position, 'full' the real overlay
     const [previewMode, setPreviewMode] = useState<'style' | 'full'>('style');
     const [styleZoom, setStyleZoom] = useState('2');
+    const sampleLanguage = getSampleLanguage(appContext.googleVoices, { voiceType, voiceSpecifier: voice }, appContext.alertConfig.data?.config?.defaultVoice);
     const [sample, setSample] = useState<SampleData>(() => {
         const matchedHypetrainType = HYPETRAIN_TYPES.find(t => specType === 'matches' && specAttribute === 'type' && t.value === specText)?.value;
-        return { ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount, hypetrainType: matchedHypetrainType || DEFAULT_SAMPLE_DATA.hypetrainType };
+        return { ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount, text: getSampleText(sampleLanguage, type), hypetrainType: matchedHypetrainType || DEFAULT_SAMPLE_DATA.hypetrainType };
     });
+
+    // Sample text follows the TTS language and event type until edited
+    useEffect(() => {
+        setSample(prev => withSampleText(prev, sampleLanguage, type));
+    }, [sampleLanguage, type]);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const channel = appContext.alertConfig.meta.channel;
 
