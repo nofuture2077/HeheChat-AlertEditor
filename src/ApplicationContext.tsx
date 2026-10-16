@@ -10,6 +10,7 @@ export interface AppContextProps {
     aiVoices: AITTSVoice[];
     googleVoices: GoogleTTSVoice[];
     isPremium: boolean;
+    premiumLoaded: boolean;
 }
 
 export const DefaultAppContext: AppContextProps = {
@@ -19,7 +20,8 @@ export const DefaultAppContext: AppContextProps = {
     aiVoices: [],
     googleVoices: [],
     replayEvent: () => Promise.resolve(new Response()),
-    isPremium: false
+    isPremium: false,
+    premiumLoaded: false
 };
 
 export const AppContext = createContext(DefaultAppContext);

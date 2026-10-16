@@ -1,12 +1,12 @@
 import { useContext, ReactElement, useState, useMemo, useRef, useEffect } from 'react';
 import { AppContext, AppContextProps } from '../ApplicationContext';
-import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip, Flex, Box, Popover, SegmentedControl } from '@mantine/core'
+import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldset, Group, Button, Select, NumberInput, Slider, Textarea, Stack, SimpleGrid, MultiSelect, Checkbox, Alert, Badge, Progress, Title, Tooltip, Flex, Box, Popover, SegmentedControl, Anchor } from '@mantine/core'
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
 import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconArrowsMinimize, IconUserEdit, IconVolume } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
-import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize, parseVolume } from './helper';
+import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize, parseVolume, PREMIUM_URL } from './helper';
 import { DEFAULT_MAX_WIDTH, MAX_WIDTHS, OptimizedFile, useFileOptimizer } from './useFileOptimizer';
 import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-react';
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
@@ -654,7 +654,7 @@ export function AlertView(props: {
                         variant="filled"
                         mt="md"
                     >
-                        You need a premium subscription to use non-Standard Google voices. Please upgrade or select a Standard voice.
+                        This channel needs HeheChat Pro to use non-Standard Google voices. <Anchor href={PREMIUM_URL} target="_blank" c="inherit" fw={700} underline="always">Upgrade</Anchor> or select a Standard voice.
                     </Alert>
                 )}
                 

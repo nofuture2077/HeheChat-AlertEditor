@@ -52,20 +52,18 @@ function App() {
         fetch(import.meta.env.VITE_BACKEND_URL + "/sink/get?token=" + token).then(res => res.json()).then(data => {
             const sink = data.sink;
             setAppContext((context) => ({...context, sink}));
-            
-            // Fetch premium status after sink is loaded
-            const premiumUrl = `${import.meta.env.VITE_BACKEND_URL}/premium/status?sink=${sink}`;
-                
-            fetch(premiumUrl)
-                .then(res => res.json())
-                .then((data: {premium: boolean}) => {
-                    setAppContext((context) => ({...context, isPremium: data.premium}));
-                })
-                .catch(error => {
-                    console.error('Failed to fetch premium status:', error);
-                    setAppContext((context) => ({...context, isPremium: false}));
-                });
         });
+
+        // Premium status of the channel the alerts are edited for, not of the user who created the editor link
+        fetch(import.meta.env.VITE_BACKEND_URL + '/premium/editor/status?token=' + token)
+            .then(res => res.json())
+            .then((data: {premium: boolean}) => {
+                setAppContext((context) => ({...context, isPremium: !!data.premium, premiumLoaded: true}));
+            })
+            .catch(error => {
+                console.error('Failed to fetch premium status:', error);
+                setAppContext((context) => ({...context, isPremium: false, premiumLoaded: true}));
+            });
 
         fetch(import.meta.env.VITE_BACKEND_URL + '/tts/ai/voices?token=' + token).then(res => res.json()).then((data: AITTSVoice[]) => {
             const voices = data.map((v) => ({voice_id: v.voice_id, name: v.name, preview_url: v.preview_url, category: v.category}));

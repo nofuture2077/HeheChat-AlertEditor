@@ -9,11 +9,12 @@ import {
     Text,
     Alert,
     ActionIcon,
-    Slider
+    Slider,
+    TextInput
 } from '@mantine/core';
-import { IconAlertCircle, IconMusic } from '@tabler/icons-react';
+import { IconCrown, IconMusic } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
-import { getVoicePreviewText, parseVolume, previewTTS } from './helper';
+import { getVoicePreviewText, isProVoice, LANGUAGE_NAMES, parseVolume, PREMIUM_URL, previewTTS } from './helper';
 
 interface DefaultVoiceEditorProps {
     opened: boolean;
@@ -41,6 +42,9 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
         }
         return 'de-DE'; // Default to German
     });
+
+    // Text typed by the user for the preview, null while the localized sample text is used
+    const [customPreviewText, setCustomPreviewText] = useState<string | null>(null);
 
     // Update state when context changes or when modal is opened
     useEffect(() => {
@@ -123,9 +127,8 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
     const handlePreviewTTS = () => {
         // When previewing the default voice in the editor, we pass the current editor state directly
         // We don't use "default" voice type here since we want to preview the actual voice being configured
-        // AI voices have no language selection, so they preview in German
         previewTTS(
-            getVoicePreviewText(voiceType === 'google' ? selectedLanguage : 'de-DE'),
+            previewText,
             voiceType,
             voice,
             appContext.alertConfig.meta.channel,
@@ -137,6 +140,9 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
     };
 
     const voiceTypes = appContext.aiVoices.length ? ['ai', 'google'] : ['google'];
+    // AI voices have no language selection, so they preview in German
+    const previewText = customPreviewText ?? getVoicePreviewText(voiceType === 'google' ? selectedLanguage : 'de-DE');
+    const proVoiceSelected = voiceType === 'google' && !!voice && isProVoice(voice) && !appContext.isPremium;
 
     return (
         <Modal
@@ -169,77 +175,10 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                             <>
                                 <Select
                                     label="Language"
-                                    data={Array.from(new Set(appContext.googleVoices.map(v => v.languageCodes[0]))).sort().map(lang => {
-                                        // Map language codes to more user-friendly names
-                                        const languageNames: Record<string, string> = {
-                                            'af-ZA': 'Afrikaans',
-                                            'am-ET': 'Amharic',
-                                            'ar-XA': 'Arabic',
-                                            'bg-BG': 'Bulgarian',
-                                            'bn-IN': 'Bengali',
-                                            'ca-ES': 'Catalan',
-                                            'cmn-CN': 'Chinese (Mandarin)',
-                                            'cmn-TW': 'Chinese (Taiwanese)',
-                                            'cs-CZ': 'Czech',
-                                            'da-DK': 'Danish',
-                                            'de-DE': 'German',
-                                            'el-GR': 'Greek',
-                                            'en-AU': 'English (Australia)',
-                                            'en-GB': 'English (UK)',
-                                            'en-IN': 'English (India)',
-                                            'en-US': 'English (US)',
-                                            'es-ES': 'Spanish (Spain)',
-                                            'es-US': 'Spanish (US)',
-                                            'et-EE': 'Estonian',
-                                            'eu-ES': 'Basque',
-                                            'fi-FI': 'Finnish',
-                                            'fil-PH': 'Filipino',
-                                            'fr-CA': 'French (Canada)',
-                                            'fr-FR': 'French',
-                                            'gl-ES': 'Galician',
-                                            'gu-IN': 'Gujarati',
-                                            'he-IL': 'Hebrew',
-                                            'hi-IN': 'Hindi',
-                                            'hu-HU': 'Hungarian',
-                                            'id-ID': 'Indonesian',
-                                            'is-IS': 'Icelandic',
-                                            'it-IT': 'Italian',
-                                            'ja-JP': 'Japanese',
-                                            'kn-IN': 'Kannada',
-                                            'ko-KR': 'Korean',
-                                            'lt-LT': 'Lithuanian',
-                                            'lv-LV': 'Latvian',
-                                            'ml-IN': 'Malayalam',
-                                            'mr-IN': 'Marathi',
-                                            'ms-MY': 'Malay',
-                                            'nb-NO': 'Norwegian',
-                                            'nl-BE': 'Dutch (Belgium)',
-                                            'nl-NL': 'Dutch',
-                                            'pa-IN': 'Punjabi',
-                                            'pl-PL': 'Polish',
-                                            'pt-BR': 'Portuguese (Brazil)',
-                                            'pt-PT': 'Portuguese',
-                                            'ro-RO': 'Romanian',
-                                            'ru-RU': 'Russian',
-                                            'sk-SK': 'Slovak',
-                                            'sr-RS': 'Serbian',
-                                            'sv-SE': 'Swedish',
-                                            'sw-KE': 'Swahili',
-                                            'ta-IN': 'Tamil',
-                                            'te-IN': 'Telugu',
-                                            'th-TH': 'Thai',
-                                            'tr-TR': 'Turkish',
-                                            'uk-UA': 'Ukrainian',
-                                            'ur-IN': 'Urdu',
-                                            'vi-VN': 'Vietnamese',
-                                            'yue-HK': 'Cantonese'
-                                        };
-                                        
-                                        return {
-                                            value: lang,
-                                            label: languageNames[lang] || lang
-                                        };
-                                    })}
+                                    data={Array.from(new Set(appContext.googleVoices.map(v => v.languageCodes[0]))).sort().map(lang => ({
+                                        value: lang,
+                                        label: LANGUAGE_NAMES[lang] || lang
+                                    }))}
                                     value={selectedLanguage}
                                     onChange={(value) => {
                                         setSelectedLanguage(value || 'de-DE');
@@ -258,7 +197,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                                         .filter(v => v.languageCodes.includes(selectedLanguage))
                                         .map(v => ({
                                             value: v.name,
-                                            label: `${v.name.replace(/[a-z]+-[a-zA-Z]+-/, '')} (${v.ssmlGender})`
+                                            label: `${v.name.replace(/[a-z]+-[a-zA-Z]+-/, '')} (${v.ssmlGender})${isProVoice(v.name) && !appContext.isPremium ? ' · Pro' : ''}`
                                         }))}
                                     value={voice}
                                     onChange={(value) => setVoice(value || '')}
@@ -301,6 +240,14 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                         />
 
                         {voice && (
+                            <TextInput
+                                label="Preview text"
+                                value={previewText}
+                                onChange={(ev) => setCustomPreviewText(ev.target.value)}
+                            />
+                        )}
+
+                        {voice && (
                             <Group justify="center">
                                 <ActionIcon
                                     variant="filled"
@@ -317,15 +264,24 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                     </Stack>
                 </Fieldset>
 
-                {/* Premium warning for non-Standard Google voices */}
-                {voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium && (
-                    <Alert 
-                        icon={<IconAlertCircle size={16} />} 
-                        title="Premium Required" 
-                        color="red" 
-                        variant="filled"
+                {/* HeheChat Pro ad, Pro voices can be previewed for free but only saved with premium */}
+                {voiceType === 'google' && appContext.premiumLoaded && !appContext.isPremium && (
+                    <Alert
+                        icon={<IconCrown size={16} />}
+                        title={proVoiceSelected ? 'This is a HeheChat Pro voice' : 'Want a more natural voice?'}
+                        color="grape"
+                        variant="light"
                     >
-                        You need a premium subscription to use non-Standard Google voices. Please upgrade or select a Standard voice.
+                        <Stack gap="xs" align="flex-start">
+                            <Text size="sm">
+                                {proVoiceSelected
+                                    ? 'Preview it as much as you like, saving it as your default needs HeheChat Pro.'
+                                    : 'Voices marked Pro are available with HeheChat Pro. Preview them for free.'}
+                            </Text>
+                            <Button component="a" href={PREMIUM_URL} target="_blank" size="xs" color="grape" leftSection={<IconCrown size={14} />}>
+                                Get HeheChat Pro
+                            </Button>
+                        </Stack>
                     </Alert>
                 )}
 
@@ -335,7 +291,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                     </Button>
                     <Button 
                         onClick={handleSave}
-                        disabled={(voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium) || !voice}
+                        disabled={proVoiceSelected || !voice}
                     >
                         Save Default Voice
                     </Button>

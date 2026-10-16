@@ -7,6 +7,7 @@ import { AppContext } from '../ApplicationContext';
 import { IconArrowRight, IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
+import { PremiumBanner } from './PremiumBanner';
 import { formatFileSize } from './helper';
 import { ImportConfigModal, ImportMode, mergeAlertConfigs } from './ImportConfigModal';
 import { StreamElementsIcon } from './StreamElementsIcon';
@@ -164,7 +165,7 @@ const AlertEditor = () => {
         <Group justify='space-between'>
           <Group justify='flex-start'>
             <HeaderLogo height={28}/>
-            <Text fw={700} size="18px">Editor</Text>
+            <Text fw={700} size="18px">Editor{appContext.isPremium ? ' Pro' : ''}</Text>
           </Group>
           <Group gap="xs">
             <Tooltip label="Preview and test your alerts">
@@ -216,6 +217,7 @@ const AlertEditor = () => {
 
       <AppShell.Main>
         <AlertConfigurator/>
+        
         <Group justify="center" mt="xl" mb="md">
           <Button
             variant="light"
@@ -226,6 +228,9 @@ const AlertEditor = () => {
             Coming from StreamElements? Import your alerts
           </Button>
         </Group>
+
+        <PremiumBanner />
+        
         <PreviewModal
           opened={previewOpened}
           onClose={() => setPreviewOpened(false)}
