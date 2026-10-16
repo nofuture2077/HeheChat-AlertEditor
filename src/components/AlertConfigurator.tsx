@@ -4,7 +4,7 @@ import { ActionIcon, NavLink, ScrollArea, Space, Text, TextInput, Modal, Fieldse
 import { FilePreviewModal } from './FilePreviewModal';
 import { useDisclosure } from '@mantine/hooks'
 import { Base64File, EventAlert, EventMainType, EventTypeMapping, EventAlertRestriction } from './types'
-import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconArrowsMinimize, IconUserEdit, IconVolume } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconSparkles, IconGiftFilled, IconMoneybag, IconUserHeart, IconCoinBitcoinFilled, IconMusic, IconPhoto, IconVideo, IconFile, IconPlant, IconCopy, IconAlertCircle, IconAffiliate, IconTrain, IconSettings, IconMessage, IconBoltFilled, IconRefresh, IconUpload, IconPlayerPlay, IconArrowsMaximize, IconArrowsMinimize, IconUserEdit, IconVolume, IconChevronUp, IconChevronDown } from '@tabler/icons-react';
 import { DropZone } from './DropZone'
 import { generateGUID, previewTTS, hashObjectSHA256, formatFileSize, parseVolume, PREMIUM_URL } from './helper';
 import { DEFAULT_MAX_WIDTH, MAX_WIDTHS, OptimizedFile, useFileOptimizer } from './useFileOptimizer';
@@ -187,6 +187,10 @@ export function AlertView(props: {
     title: string;
     close: () => void;
     confirm: (date: EventAlert) => void;
+    // Saves the draft and opens the previous/next alert of the tree, only set when editing an existing alert
+    onNavigate?: (draft: EventAlert, direction: -1 | 1) => void;
+    hasPrev?: boolean;
+    hasNext?: boolean;
 }) {
     const config = useContext<AppContextProps>(AppContext);
     const [id] = useState(props.data?.id || generateGUID());
@@ -408,8 +412,35 @@ export function AlertView(props: {
         </Stack>
     );
 
+    const saveDisabled = (voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium) || false;
+
     return (
-        <Modal key="confirm-delete-view" opened={true} onClose={props.close} withCloseButton={false} size='min(1400px, 96vw)'>
+        <Modal
+            key="confirm-delete-view"
+            opened={true}
+            onClose={props.close}
+            withCloseButton={false}
+            size='min(1400px, calc(100vw - 120px))'
+            // The body scrolls instead of the content, so the navigation arrows can sit outside the content
+            styles={{
+                content: { overflow: 'visible', position: 'relative' },
+                body: { maxHeight: 'calc(100dvh - var(--modal-y-offset) * 2)', overflowY: 'auto' }
+            }}
+        >
+            {props.onNavigate && (
+                <Stack gap="xs" pos="absolute" left={-52} top="50%" style={{ transform: 'translateY(-50%)' }}>
+                    <Tooltip label="Previous alert" position="left">
+                        <ActionIcon size="lg" variant="filled" aria-label="Previous alert" disabled={!props.hasPrev || saveDisabled} onClick={() => props.onNavigate?.(draftAlert, -1)}>
+                            <IconChevronUp />
+                        </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Next alert" position="left">
+                        <ActionIcon size="lg" variant="filled" aria-label="Next alert" disabled={!props.hasNext || saveDisabled} onClick={() => props.onNavigate?.(draftAlert, 1)}>
+                            <IconChevronDown />
+                        </ActionIcon>
+                    </Tooltip>
+                </Stack>
+            )}
             <Flex gap="md" direction={{ base: 'column-reverse', lg: 'row' }} align={{ base: 'stretch', lg: 'flex-start' }}>
             <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
                 <SimpleGrid cols={{ base: 1, md: 2 }}>
@@ -420,7 +451,7 @@ export function AlertView(props: {
                     </Fieldset>
 
                     <Fieldset legend="Trigger">
-                        <Stack>
+                        <Stack gap="xs">
                             <Select label="Type" data={['min', 'exact', 'mult', 'matches']} value={specType} onChange={(value) => setSpecType(value as 'min' | 'exact' | 'mult' | 'matches' || specType)} />
                             {nummberSpecType ? <NumberInput label="Amount" value={specAmount} onChange={(val) => setSpecAmount(Number(val))} /> : 
                             <>
@@ -431,7 +462,7 @@ export function AlertView(props: {
                     </Fieldset>
 
                     <Fieldset legend="Browser Overlay">
-                        <Stack>
+                        <Stack gap="xs">
                             <Select label="Image" data={['none'].concat(props.fileRefs.filter(x => x.type === 'image' || x.type === 'video' || x.type === 'application/zip').map(x => x.name || ''))} value={image?.name} onChange={(value) => setImage(props.fileRefs.find(x => x.name === value) || { name: 'none', id: '' })} />
                             <Textarea autosize minRows={1} maxRows={3} label="Headline" value={headline} onChange={(ev) => setHeadline(ev.target.value)}></Textarea>
                             <Textarea autosize minRows={1} maxRows={3} label="Text" value={text} onChange={(ev) => setText(ev.target.value)}></Textarea>
@@ -472,7 +503,7 @@ export function AlertView(props: {
                     </Fieldset>
 
                     <Fieldset legend="TTS">
-                        <Stack>
+                        <Stack gap="xs">
                             <Select label="TTS System" data={voiceTypes} value={voiceType} onChange={(value) => setVoiceType(value as 'ai' | 'google' | 'none' || specType)} />
                             {voiceType === 'ai' ? (
                                 <Select 
@@ -675,35 +706,6 @@ export function AlertView(props: {
                         This channel needs HeheChat Pro to use non-Standard Google voices. <Anchor href={PREMIUM_URL} target="_blank" c="inherit" fw={700} underline="always">Upgrade</Anchor> or select a Standard voice.
                     </Alert>
                 )}
-                
-                <Group justify="space-around" mt="md">
-                    <Button onClick={props.close}>Cancel</Button>
-                    <Button 
-                        variant="outline" 
-                        color="blue" 
-                        onClick={() => setShowCopyModal(true)}
-                        leftSection={<IconCopy size={16} />}
-                        disabled={!position.length && !layout.length}
-                    >
-                        Copy Layout
-                    </Button>
-                    <Button
-                        variant="light"
-                        color="blue"
-                        onClick={playPreview}
-                        leftSection={<IconPlayerPlay size={16} />}
-                    >
-                        Preview
-                    </Button>
-                    <Button 
-                        variant="filled" 
-                        color="pink" 
-                        disabled={(voiceType === 'google' && voice && !voice.includes('Standard') && !appContext.isPremium) || false}
-                        onClick={() => props.confirm(draftAlert)}
-                    >
-                        Create Alert
-                    </Button>
-                </Group>
                 {showCopyModal && (
                     <CopyLayoutModal
                         sourceAlert={{ id, name, type, specifier: { type: specType }, restriction: 'none' as EventAlertRestriction }}
@@ -739,6 +741,43 @@ export function AlertView(props: {
                 {previewColumn}
             </Box>
             </Flex>
+            {/* Stays visible at the bottom while the form scrolls */}
+            <Group
+                justify="space-around"
+                mt="md"
+                py="sm"
+                pos="sticky"
+                bottom={0}
+                bg="var(--mantine-color-body)"
+                style={{ zIndex: 2, borderTop: '1px solid var(--mantine-color-default-border)' }}
+            >
+                <Button onClick={props.close}>Cancel</Button>
+                <Button
+                    variant="outline"
+                    color="blue"
+                    onClick={() => setShowCopyModal(true)}
+                    leftSection={<IconCopy size={16} />}
+                    disabled={!position.length && !layout.length}
+                >
+                    Copy Layout
+                </Button>
+                <Button
+                    variant="light"
+                    color="blue"
+                    onClick={playPreview}
+                    leftSection={<IconPlayerPlay size={16} />}
+                >
+                    Preview
+                </Button>
+                <Button
+                    variant="filled"
+                    color="pink"
+                    disabled={saveDisabled}
+                    onClick={() => props.confirm(draftAlert)}
+                >
+                    Create Alert
+                </Button>
+            </Group>
         </Modal>);
 }
 
@@ -1516,8 +1555,34 @@ export function AlertConfigurator(props: NavigationProps) {
         confirmDeleteHandler.open();
     }
 
+    // All alerts in the order of the tree
+    const orderedAlerts = () => Object.keys(alertTypes).flatMap((ev) =>
+        (appContext.alertConfig.data?.alerts[ev as EventMainType] || []).map((alert: EventAlert) => ({ ev: ev as EventMainType, alert })));
+
+    const navigateAlert = function (draft: EventAlert, direction: -1 | 1) {
+        addAlert(draft);
+        const list = orderedAlerts();
+        const target = list[list.findIndex(x => x.alert.id === draft.id) + direction];
+        if (target) {
+            addAlertView(target.ev, 'Edit Alert: ' + target.alert.name, addAlert, target.alert);
+        }
+    };
+
     function addAlertView(type: EventMainType, title: string, confirm: (data: EventAlert) => void, data?: EventAlert) {
-        setConfirmDeleteComponent(<AlertView fileRefs={Object.values(appContext.alertConfig.data?.files || {}).map(x => ({ name: x.name, id: x.id, type: x.type }))} type={type} title={title} data={data} close={confirmDeleteHandler.close} confirm={confirm} />);
+        const list = orderedAlerts();
+        const index = data ? list.findIndex(x => x.alert.id === data.id) : -1;
+        setConfirmDeleteComponent(<AlertView
+            key={data?.id}
+            fileRefs={Object.values(appContext.alertConfig.data?.files || {}).map(x => ({ name: x.name, id: x.id, type: x.type }))}
+            type={type}
+            title={title}
+            data={data}
+            close={confirmDeleteHandler.close}
+            confirm={confirm}
+            onNavigate={index !== -1 ? navigateAlert : undefined}
+            hasPrev={index > 0}
+            hasNext={index !== -1 && index < list.length - 1}
+        />);
         confirmDeleteHandler.open();
     }
 
