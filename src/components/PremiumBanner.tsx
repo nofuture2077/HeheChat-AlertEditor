@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react';
-import { Alert, Button, Group, Text } from '@mantine/core';
+import { Button, CloseButton, Group, Paper, Stack, Text } from '@mantine/core';
 import { IconCrown } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
 import { PREMIUM_URL } from './helper';
@@ -17,23 +17,24 @@ export const PremiumBanner = () => {
   }
 
   return (
-    <Alert
-      color="yellow"
-      variant="light"
-      icon={<IconCrown />}
-      title="Get more out of your alerts with HeheChat Pro"
-      withCloseButton
-      onClose={() => setDismissed(true)}
-      mb="md"
-    >
-      <Group justify="space-between" wrap="nowrap">
-        <Text size="sm">
-          {channel ? <b>{channel}</b> : 'This channel'} doesn't have HeheChat Pro yet. Upgrade to unlock {PREMIUM_FEATURES} and support HeheChat.
-        </Text>
-        <Button component="a" href={PREMIUM_URL} target="_blank" color="yellow" leftSection={<IconCrown size={16} />} style={{ flexShrink: 0 }}>
-          Upgrade
+    <Paper withBorder p="sm" mb="md">
+      <Group justify="space-between" wrap="nowrap" align="flex-start">
+        <Stack gap="xs">
+          <Group gap="xs">
+            <IconCrown size={18} color="var(--mantine-color-grape-6)" />
+            <Text fw={600}>Get more out of your alerts with HeheChat Pro</Text>
+          </Group>
+          <Text size="xs" c="dimmed">
+            {channel ? <b>{channel}</b> : 'This channel'} doesn't have HeheChat Pro yet. Upgrade to unlock {PREMIUM_FEATURES} and support HeheChat.
+          </Text>
+        </Stack>
+        <CloseButton size="sm" aria-label="Dismiss" onClick={() => setDismissed(true)} />
+      </Group>
+      <Group justify="flex-end" mt="xs">
+        <Button component="a" href={PREMIUM_URL} target="_blank" color="grape" leftSection={<IconCrown size={16} />}>
+          Get Pro
         </Button>
       </Group>
-    </Alert>
+    </Paper>
   );
 };

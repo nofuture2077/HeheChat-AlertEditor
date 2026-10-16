@@ -12,6 +12,7 @@ import { IconAlertTriangle, IconCheck, IconInfoCircle } from '@tabler/icons-reac
 import { TTSReplacementsEditor } from './TTSReplacementsEditor';
 import { DefaultVoiceEditor } from './DefaultVoiceEditor';
 import { PreviewModal } from './PreviewModal';
+import { ProVoicePromo } from './ProVoicePromo';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
 import { buildSampleEvent, centerPosition, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, getSampleLanguage, getSampleText, HYPETRAIN_TYPES, HypetrainType, SampleData, toVisualAlert, withSampleText } from './preview/buildPreview';
 
@@ -330,6 +331,20 @@ export function AlertView(props: {
         previewRef.current?.playEvent(event);
     };
 
+    // Plays the alert with a Pro voice from the promo, the sample text is used when the alert has no TTS text
+    const playWithVoice = (proVoice: string, text: string) => {
+        const { event } = buildSampleEvent(channel, defaultEventSubtype(type), sample);
+        const tts = previewAlert.audio?.tts;
+        event.eventAlert = {
+            ...previewAlert,
+            audio: {
+                ...previewAlert.audio,
+                tts: { text: tts?.text || text, voiceType: 'google', voiceSpecifier: proVoice, voiceParams: tts?.voiceParams || {} }
+            }
+        };
+        previewRef.current?.playEvent(event);
+    };
+
     const previewColumn = (
         <Stack gap="xs">
             <Group justify="space-between" gap="xs">
@@ -387,6 +402,7 @@ export function AlertView(props: {
                     </Tooltip>
                 </Group>
             </Group>
+            <ProVoicePromo onPlayAlert={playWithVoice} />
         </Stack>
     );
 
