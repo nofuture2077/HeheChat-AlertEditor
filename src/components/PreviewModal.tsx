@@ -5,7 +5,7 @@ import { notifications } from '@mantine/notifications';
 import { EventMainType, EventType, getAlert, EventAlert } from './types';
 import { AppContext, AppContextProps } from '../ApplicationContext';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
-import { buildSampleEvent, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, HYPETRAIN_TYPES, HypetrainType, SampleData } from './preview/buildPreview';
+import { buildSampleEvent, CURRENCY_TYPES, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, getSampleLanguage, HYPETRAIN_TYPES, HypetrainType, SampleData, withSampleText } from './preview/buildPreview';
 
 interface PreviewModalProps {
   opened: boolean;
@@ -32,6 +32,15 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
   const channel = appContext.alertConfig.meta.channel;
   const eventTypes = getEventSubtypes(mainType);
   const updateSample = (patch: Partial<SampleData>) => setSample(prev => ({ ...prev, ...patch }));
+  const sampleLanguage = getSampleLanguage(
+    appContext.googleVoices,
+    (forcedAlert && useForcedAlert) ? forcedAlert.audio?.tts : undefined,
+    appContext.alertConfig.data?.config?.defaultVoice
+  );
+
+  useEffect(() => {
+    setSample(prev => withSampleText(prev, sampleLanguage, mainType));
+  }, [sampleLanguage, mainType]);
 
   useEffect(() => {
     if (opened && initialType) {
