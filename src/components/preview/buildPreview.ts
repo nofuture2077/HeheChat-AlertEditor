@@ -23,6 +23,24 @@ export const HYPETRAIN_TYPES: { value: HypetrainType, label: string }[] = [
 /** Main types whose events carry a ${currency} */
 export const CURRENCY_TYPES: EventMainType[] = ['donation', 'kofi'];
 
+export type SampleField = 'username' | 'usernameTo' | 'amount' | 'amount2' | 'currency' | 'text' | 'rewardTitle';
+
+/** Sample inputs per main type with their labels, in display order */
+export const SAMPLE_FIELDS: Record<EventMainType, Partial<Record<SampleField, string>>> = {
+  'follow': { username: 'Username' },
+  'raid': { username: 'Username', amount: 'Viewers' },
+  'sub': { username: 'Username', amount: 'Months', amount2: 'Streak', text: 'Text' },
+  'subgift': { username: 'Username', amount: 'Amount' },
+  'subgiftb': { username: 'Username', usernameTo: 'Username To' },
+  'cheer': { username: 'Username', amount: 'Bits', text: 'Text' },
+  'donation': { username: 'Username', amount: 'Amount', currency: 'Currency', text: 'Text' },
+  'channelPointRedemption': { username: 'Username', rewardTitle: 'Reward Title', text: 'Text' },
+  'kofi': { username: 'Username', amount: 'Amount', currency: 'Currency', text: 'Text' },
+  'hypetrain': { amount: 'Level' },
+  'tts': { username: 'Username', text: 'Text' },
+  'streak': { username: 'Username', amount: 'Streak', text: 'Text' },
+};
+
 export const DEFAULT_SAMPLE_DATA: SampleData = {
   username: 'PixelPanda',
   usernameTo: 'CozyCactus',
@@ -179,6 +197,32 @@ export const EVENT_TYPE_LABELS: Record<EventMainType, string> = {
   'streak': 'Watch Streak'
 };
 
+const EVENT_SUBTYPE_LABELS: Partial<Record<EventType, string>> = {
+  'sub_1000': 'Tier 1',
+  'sub_2000': 'Tier 2',
+  'sub_3000': 'Tier 3',
+  'sub_Prime': 'Prime',
+  'subgift_1000': 'Tier 1',
+  'subgift_2000': 'Tier 2',
+  'subgift_3000': 'Tier 3',
+  'subgiftb_1000': 'Tier 1',
+  'subgiftb_2000': 'Tier 2',
+  'subgiftb_3000': 'Tier 3',
+  'kofidono': 'Donation',
+  'kofisub': 'Subscription',
+  'kofishop': 'Shop Order',
+};
+
+/** Label for the subtype select of a main type */
+export function getEventSubtypeLabel(mainType: EventMainType): string {
+  return ['sub', 'subgift', 'subgiftb'].includes(mainType) ? 'Sub Type' : 'Event Type';
+}
+
+/** Subtypes of a main type as select options with readable labels */
+export function getEventSubtypeOptions(mainType: EventMainType): { value: EventType, label: string }[] {
+  return getEventSubtypes(mainType).map(type => ({ value: type, label: EVENT_SUBTYPE_LABELS[type] || type }));
+}
+
 export function getEventSubtypes(mainType: EventMainType): EventType[] {
   return Object.entries(EventTypeMapping)
     .filter(([key, value]) => value === mainType && value !== key)
@@ -195,22 +239,24 @@ export function defaultEventSubtype(mainType: EventMainType): EventType {
  */
 export function buildSampleEvent(channel: string, eventType: EventType, sample: SampleData): { event: Event, eventData: Record<string, unknown> } {
   const mainType = EventTypeMapping[eventType];
+  const fields = SAMPLE_FIELDS[mainType];
+  const username = fields.username ? sample.username : channel;
   const eventData = {
-    rewardTitle: sample.rewardTitle,
-    username: sample.username,
+    ...(fields.rewardTitle && { rewardTitle: sample.rewardTitle }),
+    username,
     eventType,
-    text: [{ text: sample.text }],
+    text: [{ text: fields.text ? sample.text : '' }],
     ...sampleEventVars(mainType, sample),
   };
   const event: Event = {
     id: Date.now(),
     channel,
-    username: sample.username,
+    username,
     eventtype: eventType,
     date: Date.now(),
-    ...(sample.usernameTo && mainType === 'subgiftb' && { usernameTo: sample.usernameTo }),
-    ...(sample.amount !== '' && { amount: sample.amount }),
-    ...(sample.amount2 !== '' && mainType === 'sub' && { amount2: sample.amount2 }),
+    ...(sample.usernameTo && fields.usernameTo && { usernameTo: sample.usernameTo }),
+    ...(sample.amount !== '' && fields.amount && { amount: sample.amount }),
+    ...(sample.amount2 !== '' && fields.amount2 && { amount2: sample.amount2 }),
     text: JSON.stringify(eventData),
   };
   return { event, eventData };
