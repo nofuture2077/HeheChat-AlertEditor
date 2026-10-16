@@ -7,6 +7,7 @@ import { AppContext } from '../ApplicationContext';
 import { IconArrowRight, IconDeviceFloppy, IconEye, IconPackageExport, IconPackageImport } from '@tabler/icons-react'
 import { PreviewModal } from './PreviewModal';
 import { HeaderLogo } from './HeaderLogo';
+import { PremiumBadge, PremiumBanner } from './PremiumBadge';
 import { formatFileSize } from './helper';
 import { ImportConfigModal, ImportMode, mergeAlertConfigs } from './ImportConfigModal';
 import { StreamElementsIcon } from './StreamElementsIcon';
@@ -165,6 +166,7 @@ const AlertEditor = () => {
           <Group justify='flex-start'>
             <HeaderLogo height={28}/>
             <Text fw={700} size="18px">Editor</Text>
+            <PremiumBadge />
           </Group>
           <Group gap="xs">
             <Tooltip label="Preview and test your alerts">
@@ -215,6 +217,7 @@ const AlertEditor = () => {
       </AppShell.Header>
 
       <AppShell.Main>
+        <PremiumBanner />
         <AlertConfigurator/>
         <Group justify="center" mt="xl" mb="md">
           <Button

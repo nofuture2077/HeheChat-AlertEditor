@@ -9,11 +9,12 @@ import {
     Text,
     Alert,
     ActionIcon,
-    Slider
+    Slider,
+    Anchor
 } from '@mantine/core';
 import { IconAlertCircle, IconMusic } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
-import { getVoicePreviewText, parseVolume, previewTTS } from './helper';
+import { getVoicePreviewText, parseVolume, previewTTS, PREMIUM_URL } from './helper';
 
 interface DefaultVoiceEditorProps {
     opened: boolean;
@@ -325,7 +326,7 @@ export function DefaultVoiceEditor({ opened, onClose }: DefaultVoiceEditorProps)
                         color="red" 
                         variant="filled"
                     >
-                        You need a premium subscription to use non-Standard Google voices. Please upgrade or select a Standard voice.
+                        This channel needs HeheChat Pro to use non-Standard Google voices. <Anchor href={PREMIUM_URL} target="_blank" c="inherit" fw={700} underline="always">Upgrade</Anchor> or select a Standard voice.
                     </Alert>
                 )}
 
