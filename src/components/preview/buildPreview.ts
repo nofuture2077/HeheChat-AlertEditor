@@ -197,6 +197,32 @@ export const EVENT_TYPE_LABELS: Record<EventMainType, string> = {
   'streak': 'Watch Streak'
 };
 
+const EVENT_SUBTYPE_LABELS: Partial<Record<EventType, string>> = {
+  'sub_1000': 'Tier 1',
+  'sub_2000': 'Tier 2',
+  'sub_3000': 'Tier 3',
+  'sub_Prime': 'Prime',
+  'subgift_1000': 'Tier 1',
+  'subgift_2000': 'Tier 2',
+  'subgift_3000': 'Tier 3',
+  'subgiftb_1000': 'Tier 1',
+  'subgiftb_2000': 'Tier 2',
+  'subgiftb_3000': 'Tier 3',
+  'kofidono': 'Donation',
+  'kofisub': 'Subscription',
+  'kofishop': 'Shop Order',
+};
+
+/** Label for the subtype select of a main type */
+export function getEventSubtypeLabel(mainType: EventMainType): string {
+  return ['sub', 'subgift', 'subgiftb'].includes(mainType) ? 'Sub Type' : 'Event Type';
+}
+
+/** Subtypes of a main type as select options with readable labels */
+export function getEventSubtypeOptions(mainType: EventMainType): { value: EventType, label: string }[] {
+  return getEventSubtypes(mainType).map(type => ({ value: type, label: EVENT_SUBTYPE_LABELS[type] || type }));
+}
+
 export function getEventSubtypes(mainType: EventMainType): EventType[] {
   return Object.entries(EventTypeMapping)
     .filter(([key, value]) => value === mainType && value !== key)

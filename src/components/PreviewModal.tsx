@@ -5,7 +5,7 @@ import { notifications } from '@mantine/notifications';
 import { EventMainType, EventType, getAlert, EventAlert } from './types';
 import { AppContext, AppContextProps } from '../ApplicationContext';
 import { OverlayPreviewFrame, OverlayPreviewHandle } from './preview/OverlayPreviewFrame';
-import { buildSampleEvent, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypes, getSampleLanguage, HYPETRAIN_TYPES, HypetrainType, SAMPLE_FIELDS, SampleData, SampleField, withSampleText } from './preview/buildPreview';
+import { buildSampleEvent, DEFAULT_SAMPLE_DATA, defaultEventSubtype, EVENT_TYPE_LABELS, getEventSubtypeLabel, getEventSubtypeOptions, getSampleLanguage, HYPETRAIN_TYPES, HypetrainType, SAMPLE_FIELDS, SampleData, SampleField, withSampleText } from './preview/buildPreview';
 
 interface PreviewModalProps {
   opened: boolean;
@@ -30,7 +30,7 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
   const [useForcedAlert, setUseForcedAlert] = useState(true);
 
   const channel = appContext.alertConfig.meta.channel;
-  const eventTypes = getEventSubtypes(mainType);
+  const eventTypes = getEventSubtypeOptions(mainType);
   const updateSample = (patch: Partial<SampleData>) => setSample(prev => ({ ...prev, ...patch }));
   const sampleLanguage = getSampleLanguage(
     appContext.googleVoices,
@@ -100,7 +100,7 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
 
             {eventTypes.length > 0 && (
               <Select
-                label="Event Type"
+                label={getEventSubtypeLabel(mainType)}
                 data={eventTypes}
                 value={eventType}
                 onChange={(value) => setEventType((value || eventType) as EventType)}
