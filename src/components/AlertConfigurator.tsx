@@ -431,7 +431,7 @@ export function AlertView(props: {
             opened={true}
             onClose={props.close}
             withCloseButton={false}
-            size='min(1400px, calc(100vw - 120px))'
+            size='min(1400px, calc(100vw - 96px))'
             // The body scrolls instead of the content, so the navigation arrows can sit outside the content
             styles={{
                 content: { overflow: 'visible', position: 'relative' },
@@ -439,17 +439,13 @@ export function AlertView(props: {
             }}
         >
             {props.onNavigate && (
-                <Stack gap="xs" pos="absolute" left={-52} top="50%" style={{ transform: 'translateY(-50%)' }}>
-                    <Tooltip label="Previous alert" position="left">
-                        <ActionIcon size="lg" variant="filled" aria-label="Previous alert" disabled={!props.hasPrev || saveDisabled} onClick={() => props.onNavigate?.(draftAlert, -1)}>
-                            <IconChevronUp />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Next alert" position="left">
-                        <ActionIcon size="lg" variant="filled" aria-label="Next alert" disabled={!props.hasNext || saveDisabled} onClick={() => props.onNavigate?.(draftAlert, 1)}>
-                            <IconChevronDown />
-                        </ActionIcon>
-                    </Tooltip>
+                <Stack gap="xs" pos="absolute" left={-40} top="50%" style={{ transform: 'translateY(-50%)' }}>
+                    <ActionIcon size="lg" variant="filled" aria-label="Previous alert" disabled={!props.hasPrev || saveDisabled} onClick={() => props.onNavigate?.(draftAlert, -1)}>
+                        <IconChevronUp />
+                    </ActionIcon>
+                    <ActionIcon size="lg" variant="filled" aria-label="Next alert" disabled={!props.hasNext || saveDisabled} onClick={() => props.onNavigate?.(draftAlert, 1)}>
+                        <IconChevronDown />
+                    </ActionIcon>
                 </Stack>
             )}
             <Flex gap="md" direction={{ base: 'column-reverse', lg: 'row' }} align={{ base: 'stretch', lg: 'flex-start' }}>
