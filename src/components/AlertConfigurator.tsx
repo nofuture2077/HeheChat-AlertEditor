@@ -180,6 +180,17 @@ export function CopyLayoutModal(props: {
     );
 }
 
+const PREVIEW_MODE_KEY = 'hehe-preview-mode';
+
+// Remembers the preview mode across alerts, 'style' by default
+function usePreviewModePreference(): ['style' | 'full', (value: 'style' | 'full') => void] {
+    const [mode, setMode] = useState<'style' | 'full'>(() => localStorage.getItem(PREVIEW_MODE_KEY) === 'full' ? 'full' : 'style');
+    return [mode, (value: 'style' | 'full') => {
+        localStorage.setItem(PREVIEW_MODE_KEY, value);
+        setMode(value);
+    }];
+}
+
 export function AlertView(props: {
     data?: EventAlert,
     type: EventMainType,
@@ -300,7 +311,7 @@ export function AlertView(props: {
     // Live overlay preview of the alert being edited
     const previewRef = useRef<OverlayPreviewHandle>(null);
     // 'style' shows the alert centered and zoomed without its screen position, 'full' the real overlay
-    const [previewMode, setPreviewMode] = useState<'style' | 'full'>('style');
+    const [previewMode, setPreviewMode] = usePreviewModePreference();
     const [styleZoom, setStyleZoom] = useState('2');
     // Sample texts follow the language selected for the alert's Google voice, otherwise the default voice
     const sampleLanguage = voiceType === 'google' ? selectedLanguage : getSampleLanguage(appContext.googleVoices, appContext.alertConfig.data?.config?.defaultVoice);
