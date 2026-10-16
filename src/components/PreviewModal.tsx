@@ -14,6 +14,8 @@ interface PreviewModalProps {
   initialType?: EventMainType;
   /** Alert being edited (unsaved); played instead of the alert picked from the config */
   forcedAlert?: EventAlert;
+  /** Language for the sample texts while the forced alert is played */
+  forcedAlertLanguage?: string;
 }
 
 const MAIN_TYPES: EventMainType[] = ['follow', 'raid', 'sub', 'subgift', 'subgiftb', 'cheer', 'donation', 'channelPointRedemption', 'kofi', 'hypetrain', 'tts', 'streak'];
@@ -22,7 +24,7 @@ export function openOverlayInNewTab(sink?: string) {
   window.open(import.meta.env.VITE_SINK_URL + "#token=" + sink + "&preview=true", '_blank');
 }
 
-export function PreviewModal({ opened, onClose, initialType, forcedAlert }: PreviewModalProps) {
+export function PreviewModal({ opened, onClose, initialType, forcedAlert, forcedAlertLanguage }: PreviewModalProps) {
   const appContext = useContext<AppContextProps>(AppContext);
   const frameRef = useRef<OverlayPreviewHandle>(null);
   const [mainType, setMainType] = useState<EventMainType>(initialType || 'follow');
@@ -33,7 +35,7 @@ export function PreviewModal({ opened, onClose, initialType, forcedAlert }: Prev
   const channel = appContext.alertConfig.meta.channel;
   const eventTypes = getEventSubtypeOptions(mainType);
   const updateSample = (patch: Partial<SampleData>) => setSample(prev => ({ ...prev, ...patch }));
-  const sampleLanguage = getSampleLanguage(
+  const sampleLanguage = (forcedAlert && useForcedAlert && forcedAlertLanguage) || getSampleLanguage(
     appContext.googleVoices,
     (forcedAlert && useForcedAlert) ? forcedAlert.audio?.tts : undefined,
     appContext.alertConfig.data?.config?.defaultVoice

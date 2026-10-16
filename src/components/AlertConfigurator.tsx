@@ -296,7 +296,8 @@ export function AlertView(props: {
     // 'style' shows the alert centered and zoomed without its screen position, 'full' the real overlay
     const [previewMode, setPreviewMode] = useState<'style' | 'full'>('style');
     const [styleZoom, setStyleZoom] = useState('2');
-    const sampleLanguage = getSampleLanguage(appContext.googleVoices, { voiceType, voiceSpecifier: voice }, appContext.alertConfig.data?.config?.defaultVoice);
+    // Sample texts follow the language selected for the alert's Google voice, otherwise the default voice
+    const sampleLanguage = voiceType === 'google' ? selectedLanguage : getSampleLanguage(appContext.googleVoices, appContext.alertConfig.data?.config?.defaultVoice);
     const [sample, setSample] = useState<SampleData>(() => {
         const matchedHypetrainType = HYPETRAIN_TYPES.find(t => specType === 'matches' && specAttribute === 'type' && t.value === specText)?.value;
         return { ...DEFAULT_SAMPLE_DATA, amount: specAmount || DEFAULT_SAMPLE_DATA.amount, text: getSampleText(sampleLanguage, type), hypetrainType: matchedHypetrainType || DEFAULT_SAMPLE_DATA.hypetrainType };
@@ -713,6 +714,7 @@ export function AlertView(props: {
                         onClose={() => setShowPreviewModal(false)}
                         initialType={type}
                         forcedAlert={draftAlert}
+                        forcedAlertLanguage={sampleLanguage}
                     />
                 )}
             </Stack>
