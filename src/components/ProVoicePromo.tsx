@@ -1,12 +1,12 @@
 import { useContext, useState } from 'react';
-import { Button, Group, Paper, Select, Stack, Text, TextInput } from '@mantine/core';
-import { IconBroadcast, IconCrown, IconPlayerPlay } from '@tabler/icons-react';
+import { Button, Group, Paper, Select, Stack, Text } from '@mantine/core';
+import { IconCrown, IconPlayerPlay } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
-import { getVoicePreviewText, isProVoice, LANGUAGE_NAMES, PREMIUM_URL, previewTTS } from './helper';
+import { getVoicePreviewText, isProVoice, LANGUAGE_NAMES, PREMIUM_URL } from './helper';
 
 interface ProVoicePromoProps {
-    /** Plays the previewed alert with the given voice, the text is used when the alert has no TTS text */
-    onPlayAlert?: (voice: string, text: string) => void;
+    /** Plays the previewed alert with the given voice, the localized sample text is used when the alert has no TTS text */
+    onPlayAlert: (voice: string, text: string) => void;
 }
 
 // Lets non-premium users try the HeheChat Pro voices, previews are free on the backend
@@ -17,8 +17,6 @@ export function ProVoicePromo({ onPlayAlert }: ProVoicePromoProps) {
 
     const [language, setLanguage] = useState('de-DE');
     const [voice, setVoice] = useState<string | null>(null);
-    // Text typed by the user, null while the localized sample text is used
-    const [customText, setCustomText] = useState<string | null>(null);
 
     if (!proVoices.length) {
         return null;
@@ -26,7 +24,6 @@ export function ProVoicePromo({ onPlayAlert }: ProVoicePromoProps) {
 
     const languages = Array.from(new Set(proVoices.map(v => v.languageCodes[0]))).sort();
     const selectedVoice = voice ?? voicesFor(language)[0]?.name ?? '';
-    const text = customText ?? getVoicePreviewText(language);
 
     return (
         <Paper withBorder p="sm" mt="sm">
@@ -54,36 +51,20 @@ export function ProVoicePromo({ onPlayAlert }: ProVoicePromoProps) {
                     value={selectedVoice}
                     onChange={(value) => setVoice(value)}
                 />
-                <TextInput
-                    label="Text"
-                    value={text}
-                    onChange={(ev) => setCustomText(ev.target.value)}
-                />
                 <Group grow>
                     <Button
                         variant="light"
                         color="grape"
                         leftSection={<IconPlayerPlay size={16} />}
-                        disabled={!selectedVoice || !text}
-                        onClick={() => previewTTS(text, 'google', selectedVoice, appContext.alertConfig.meta.channel, appContext.sink || '', undefined, 1, 1)}
+                        disabled={!selectedVoice}
+                        onClick={() => onPlayAlert(selectedVoice, getVoicePreviewText(language))}
                     >
-                        Listen
+                        Preview
                     </Button>
                     <Button component="a" href={PREMIUM_URL} target="_blank" color="grape" leftSection={<IconCrown size={16} />}>
                         Get Pro
                     </Button>
                 </Group>
-                {onPlayAlert && (
-                    <Button
-                        variant="light"
-                        color="grape"
-                        leftSection={<IconBroadcast size={16} />}
-                        disabled={!selectedVoice}
-                        onClick={() => onPlayAlert(selectedVoice, text)}
-                    >
-                        Play alert with this voice
-                    </Button>
-                )}
             </Stack>
         </Paper>
     );
