@@ -216,8 +216,8 @@ const AlertEditor = () => {
       </AppShell.Header>
 
       <AppShell.Main>
-        <PremiumBanner />
         <AlertConfigurator/>
+        
         <Group justify="center" mt="xl" mb="md">
           <Button
             variant="light"
@@ -228,6 +228,9 @@ const AlertEditor = () => {
             Coming from StreamElements? Import your alerts
           </Button>
         </Group>
+
+        <PremiumBanner />
+        
         <PreviewModal
           opened={previewOpened}
           onClose={() => setPreviewOpened(false)}

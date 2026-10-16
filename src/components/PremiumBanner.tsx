@@ -4,7 +4,7 @@ import { IconCrown } from '@tabler/icons-react';
 import { AppContext } from '../ApplicationContext';
 import { PREMIUM_URL } from './helper';
 
-const PREMIUM_FEATURES = 'premium Google voices and AI (ElevenLabs) text-to-speech';
+const PREMIUM_FEATURES = 'premium Google voices';
 
 // Ad for channels without premium, can be dismissed for the current session
 export const PremiumBanner = () => {
