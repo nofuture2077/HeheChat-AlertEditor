@@ -18,7 +18,7 @@ export function ProVoicePromo({ onPlayAlert }: ProVoicePromoProps) {
     const [language, setLanguage] = useState('de-DE');
     const [voice, setVoice] = useState<string | null>(null);
 
-    if (!proVoices.length) {
+    if (appContext.isPremium || !proVoices.length) {
         return null;
     }
 
