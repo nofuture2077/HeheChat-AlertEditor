@@ -89,7 +89,8 @@ const AVAILABLE_CLASSES = {
 // Groups of classes where only one value can be active at a time
 const EXCLUSIVE_GROUPS: string[][] = [
     AVAILABLE_CLASSES.position.alignment.filter(v => v.startsWith('align-')),
-    AVAILABLE_CLASSES.position.imageSizes,
+    AVAILABLE_CLASSES.position.imageSizes.filter(v => !v.startsWith('image-scale')),
+    AVAILABLE_CLASSES.position.imageSizes.filter(v => v.startsWith('image-scale')),
     AVAILABLE_CLASSES.position.imagePosition.filter(v => v.startsWith('image-fixed-')),
     AVAILABLE_CLASSES.position.headlineSizes.filter(v => !v.startsWith('headline-w-')),
     AVAILABLE_CLASSES.position.headlineSizes.filter(v => v.startsWith('headline-w-')),
