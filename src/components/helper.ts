@@ -1,7 +1,7 @@
 import humanizeDuration from "humanize-duration"
 
 // The HeheChat app hosts the alert browser source, its /premium route opens the premium dialog
-export const PREMIUM_URL = new URL('premium', import.meta.env.VITE_SINK_URL).href;
+export const PREMIUM_URL = new URL('premium', import.meta.env.VITE_FRONTEND_URL).href;
 
 export function generateGUID(): string {
     return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>

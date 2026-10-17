@@ -13,6 +13,7 @@ jobs:
       VITE_CLIENT_ID: 7tmrvoh4llxtx9yft7pwhtgbi61ba9
       VITE_BUILDNUMBER: ${{ github.run_number }}
       VITE_SINK_URL: https://browsersource.hehechat.io
+      VITE_FRONTEND_URL: https://hehechat.io
     runs-on: ubuntu-latest
 
     steps:
